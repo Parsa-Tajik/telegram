@@ -6,10 +6,9 @@ import com.sun.net.httpserver.HttpHandler;
 import telegramserver.services.UserService;
 
 import java.io.*;
-import java.util.HashMap;
 import java.util.Map;
 
-// Handles register and login APIs
+// REST API handler for register and login
 public class AuthAPI implements HttpHandler {
     private static final Gson gson = new Gson();
 

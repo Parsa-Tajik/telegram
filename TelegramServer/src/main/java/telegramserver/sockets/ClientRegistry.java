@@ -4,7 +4,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.Map;
 import java.io.BufferedWriter;
 
-// Tracks online clients
+// Tracks online users + their socket connections
 public class ClientRegistry {
     private static final Map<String, BufferedWriter> clients = new ConcurrentHashMap<>();
 

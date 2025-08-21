@@ -5,14 +5,16 @@ import telegramserver.models.Message;
 import java.util.ArrayList;
 import java.util.List;
 
-// Handles saving and retrieving messages (DB-ready)
+// Handles storing and retrieving messages
 public class MessageService {
     private static final List<Message> messages = new ArrayList<>();
 
     public static void saveMessage(Message msg) {
         messages.add(msg);
         System.out.println("💾 Message saved: " + msg.getContent());
-        // TODO: connect to DB using msg.handlemessages()
+
+        // 👉 DB Team: Save into messages table
+        // Example: INSERT INTO messages (...) VALUES (...)
     }
 
     public static List<Message> getMessagesForChat(int chatId) {
@@ -22,6 +24,7 @@ public class MessageService {
                 chatMsgs.add(m);
             }
         }
+        // 👉 DB Team: Instead, run SELECT * FROM messages WHERE chatId=?
         return chatMsgs;
     }
 }

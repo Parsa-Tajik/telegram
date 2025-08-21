@@ -21,6 +21,8 @@ public class SearchAPI implements HttpHandler {
 
         if ("/search/user".equals(path) && method.equalsIgnoreCase("GET")) {
             String username = query.split("=")[1];
+
+            // 👉 DB Team: Run SELECT query to find user by username
             if (username.equals("ali123")) {
                 User u = new User(1, "Ali", "Nadi", "Bio",
                         "0912000000", "ali123", "hash", 0, true, 2025);
@@ -32,6 +34,7 @@ public class SearchAPI implements HttpHandler {
             }
 
         } else if ("/search/chat".equals(path) && method.equalsIgnoreCase("GET")) {
+            // 👉 DB Team: Fetch chats where user is a member
             List<String> chats = new ArrayList<>(List.of("Group1", "Family"));
             response = gson.toJson(chats);
             exchange.sendResponseHeaders(200, response.length());

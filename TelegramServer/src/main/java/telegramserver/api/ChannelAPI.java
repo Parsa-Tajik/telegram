@@ -9,6 +9,7 @@ import java.io.*;
 import java.util.HashMap;
 import java.util.Map;
 
+// REST API for channel management
 public class ChannelAPI implements HttpHandler {
     private static final Gson gson = new Gson();
 
@@ -22,12 +23,14 @@ public class ChannelAPI implements HttpHandler {
             Map<String, String> req = gson.fromJson(new InputStreamReader(exchange.getRequestBody()), Map.class);
             String name = req.get("name");
             int ownerId = Integer.parseInt(req.get("ownerId"));
+
             int channelId = ChannelService.createChannel(name, ownerId);
 
             Map<String, Object> res = new HashMap<>();
             res.put("status", "success");
             res.put("channelId", channelId);
             res.put("name", name);
+
             response = gson.toJson(res);
             sendResponse(exchange, 200, response);
 
@@ -35,6 +38,7 @@ public class ChannelAPI implements HttpHandler {
             Map<String, String> req = gson.fromJson(new InputStreamReader(exchange.getRequestBody()), Map.class);
             int channelId = Integer.parseInt(req.get("channelId"));
             String username = req.get("username");
+
             ChannelService.joinChannel(channelId, username);
 
             response = gson.toJson(Map.of("status", "success", "message", username + " joined channel " + channelId));
@@ -57,4 +61,3 @@ public class ChannelAPI implements HttpHandler {
         }
     }
 }
-    

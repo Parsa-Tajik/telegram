@@ -10,6 +10,7 @@ import java.net.Socket;
 import java.sql.Timestamp;
 import java.util.StringTokenizer;
 
+// Handles commands from one client
 public class ClientHandler implements Runnable {
     private final Socket socket;
     private BufferedReader reader;
@@ -67,40 +68,40 @@ public class ClientHandler implements Runnable {
                 String content = line.substring(line.indexOf(" ", line.indexOf(" ") + 1) + 1);
                 Message msg = new Message(0, content, 0, chatId, 0,
                         new Timestamp(System.currentTimeMillis()), false, false);
+
                 MessageService.saveMessage(msg);
+                // 👉 DB Team: Save message into DB here
 
                 for (String member : ChatService.getMembers(chatId)) {
                     BufferedWriter w = ClientRegistry.getWriter(member);
                     if (w != null) {
-                        w.write("💬 [" + chatId + "] " + username + ": " + content + "\n");
+                        w.write("[Chat " + chatId + "] " + username + ": " + content + "\n");
                         w.flush();
                     }
                 }
                 break;
 
             case "CREATE_CHANNEL":
-                int channelId = Integer.parseInt(st.nextToken());
-                ChannelService.createChannel("Channel" + channelId, 0);
-                sendMessage("✅ Created channel " + channelId);
+                String channelName = st.nextToken();
+                int ownerId = Integer.parseInt(st.nextToken());
+                int channelId = ChannelService.createChannel(channelName, ownerId);
+                sendMessage("✅ Channel created with id " + channelId);
                 break;
 
             case "JOIN_CHANNEL":
-                channelId = Integer.parseInt(st.nextToken());
-                ChannelService.joinChannel(channelId, username);
-                sendMessage("✅ Joined channel " + channelId);
+                int joinId = Integer.parseInt(st.nextToken());
+                ChannelService.joinChannel(joinId, username);
+                sendMessage("✅ Joined channel " + joinId);
                 break;
 
             case "SEND_CHANNEL":
-                channelId = Integer.parseInt(st.nextToken());
+                int chId = Integer.parseInt(st.nextToken());
                 String msgContent = line.substring(line.indexOf(" ", line.indexOf(" ") + 1) + 1);
-                Message channelMsg = new Message(0, msgContent, 0, channelId, 0,
-                        new Timestamp(System.currentTimeMillis()), false, false);
-                MessageService.saveMessage(channelMsg);
 
-                for (String member : ChannelService.getMembers(channelId)) {
+                for (String member : ChannelService.getMembers(chId)) {
                     BufferedWriter w = ClientRegistry.getWriter(member);
                     if (w != null) {
-                        w.write("📢 [Channel " + channelId + "] " + username + ": " + msgContent + "\n");
+                        w.write("📢 [Channel " + chId + "] " + username + ": " + msgContent + "\n");
                         w.flush();
                     }
                 }

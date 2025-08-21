@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
 
+// Main socket server loop
 public class SocketServer {
     public static void start(int port) throws IOException {
         try (ServerSocket serverSocket = new ServerSocket(port)) {

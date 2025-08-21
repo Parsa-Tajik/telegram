@@ -8,10 +8,10 @@ import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.util.concurrent.Executors;
 
-// Main entry point: starts REST and Socket servers
+// Main entry point: starts REST API server + Socket server
 public class MainServer {
     public static void main(String[] args) throws IOException {
-        // REST API server
+        // Start REST API
         HttpServer httpServer = HttpServer.create(new InetSocketAddress(8000), 0);
 
         httpServer.createContext("/register", new AuthAPI());
@@ -21,13 +21,13 @@ public class MainServer {
         httpServer.createContext("/search/chat", new SearchAPI());
         httpServer.createContext("/channels/create", new ChannelAPI());
         httpServer.createContext("/channels/join", new ChannelAPI());
-        httpServer.createContext("/channels", new ChannelAPI()); // GET /channels/{id}
+        httpServer.createContext("/channels", new ChannelAPI());
 
         httpServer.setExecutor(Executors.newCachedThreadPool());
         httpServer.start();
         System.out.println("🌍 REST API running at http://localhost:8000");
 
-        // Socket server for real-time chat
+        // Start Socket server (real-time chat)
         new Thread(() -> {
             try {
                 SocketServer.start(9090);

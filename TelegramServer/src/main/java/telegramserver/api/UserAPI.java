@@ -8,7 +8,7 @@ import telegramserver.models.User;
 import java.io.IOException;
 import java.io.OutputStream;
 
-// Handles /users/{id}
+// Handles /users/{id} endpoint
 public class UserAPI implements HttpHandler {
     private static final Gson gson = new Gson();
 
@@ -20,8 +20,11 @@ public class UserAPI implements HttpHandler {
 
         if (path.startsWith("/users/") && method.equalsIgnoreCase("GET")) {
             int userId = Integer.parseInt(path.replace("/users/", ""));
+
+            // 👉 DB Team: Fetch user info by ID from DB instead of dummy
             User dummy = new User(userId, "Ali", "Nadi", "This is bio",
                     "0912000000", "ali123", "hashPass", 0, true, 2025);
+
             response = gson.toJson(dummy);
             exchange.sendResponseHeaders(200, response.length());
         } else {
