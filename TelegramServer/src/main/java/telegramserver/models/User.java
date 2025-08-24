@@ -103,5 +103,4 @@ public class User {
     }
 
 
-    // For DB team
 }

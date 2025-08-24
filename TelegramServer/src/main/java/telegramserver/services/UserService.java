@@ -3,6 +3,10 @@ package telegramserver.services;
 import com.google.gson.Gson;
 import telegramserver.models.User;
 
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -25,6 +29,9 @@ public class UserService {
 
         users.put(username, user);
 
+        // DB program,:
+        user.handleuser();
+
         // 👉 DB Team: Save this user into `users` table instead of memory
         // Example: INSERT INTO users (...) VALUES (...);
 
@@ -35,6 +42,25 @@ public class UserService {
         String username = req.get("username");
         String password = req.get("password");
 
+        //DB program
+        String url = "jdbc:postgresql://localhost:5432/Telegram";
+        String user1 = "postgres";
+        String pass = "AmirMahdiImani";
+
+        String query = "SELECT * FROM users WHERE username = ? AND password = ?";
+        try{
+            Connection conn = DriverManager.getConnection(url, user1, pass);
+            PreparedStatement ps = conn.prepareStatement(query);
+            ps.setString(1, username);
+            ps.setString(2, pass);
+            ResultSet rs = ps.executeQuery();
+        }
+        catch (Exception e) {
+            e.printStackTrace();
+        }
+        //finish
+
+
         // 👉 DB Team: Instead of using HashMap, fetch user by username from DB
         if (!users.containsKey(username)) {
             return gson.toJson(Map.of("status", "error", "message", "User not found"));
@@ -44,6 +70,29 @@ public class UserService {
         if (!user.getTswHash().equals(password)) {
             return gson.toJson(Map.of("status", "error", "message", "Invalid password"));
         }
+        //DB program:
+        String updateQuery = "UPDATE users SET is_online = ? WHERE username = ?";
+
+        try (Connection conn = DriverManager.getConnection(url, user1, pass);
+             PreparedStatement ps = conn.prepareStatement(updateQuery)) {
+
+            boolean isOnline = true;
+
+            ps.setBoolean(1, isOnline);
+            ps.setString(2, username);
+
+            int rows = ps.executeUpdate();
+            if (rows > 0) {
+                System.out.println("User " + username + " status updated → isOnline = " + isOnline);
+            } else {
+                System.out.println("⚠️ User not found: " + username);
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+         //finish
+
 
         // 👉 DB Team: Update user "isOnline" status in DB
         return gson.toJson(Map.of("status", "success", "message", "Login successful"));

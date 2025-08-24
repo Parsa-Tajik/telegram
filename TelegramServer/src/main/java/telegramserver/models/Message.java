@@ -51,7 +51,8 @@ public class Message {
     public boolean isIsedited() {
         return isedited;
     }
-    public void handlemessages(){
+    public void handlemessages() {
+
         String url = "jdbc:postgresql://localhost:5432/Telegram";
         String user = "postgres";
         String password = "AmirMahdiImani";

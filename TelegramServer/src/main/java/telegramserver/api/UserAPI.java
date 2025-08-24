@@ -7,6 +7,10 @@ import telegramserver.models.User;
 
 import java.io.IOException;
 import java.io.OutputStream;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
 
 // Handles /users/{id} endpoint
 public class UserAPI implements HttpHandler {
@@ -14,14 +18,25 @@ public class UserAPI implements HttpHandler {
 
     @Override
     public void handle(HttpExchange exchange) throws IOException {
+        String url = "jdbc:postgresql://localhost:5432/Telegram";
+        String user = "postgres";
+        String password = "AmirMahdiImani";
+
         String path = exchange.getRequestURI().getPath();
         String method = exchange.getRequestMethod();
         String response;
 
         if (path.startsWith("/users/") && method.equalsIgnoreCase("GET")) {
             int userId = Integer.parseInt(path.replace("/users/", ""));
+            String sql = "select * from users where id=?";
+            try {
+                Connection connection = DriverManager.getConnection(url, user, password);
+                PreparedStatement ps = connection.prepareStatement(sql);
+            }
+            catch (SQLException e) {
+                throw new RuntimeException(e);
+            }
 
-            // 👉 DB Team: Fetch user info by ID from DB instead of dummy
             User dummy = new User(userId, "Ali", "Nadi", "This is bio",
                     "0912000000", "ali123", "hashPass", 0, true, 2025);
 

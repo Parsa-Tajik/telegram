@@ -2,6 +2,7 @@ package telegramserver.services;
 
 import telegramserver.models.Message;
 
+import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -13,17 +14,46 @@ public class MessageService {
         messages.add(msg);
         System.out.println("💾 Message saved: " + msg.getContent());
 
+        Message handle = new Message(msg.getId(),msg.getContent(),msg.getSenderId(),msg.getChatid(),msg.getReplyid(),msg.getSentat(),msg.isDeleted(),msg.isIsedited());
+         handle.handlemessages();
+        //completed
         // 👉 DB Team: Save into messages table
         // Example: INSERT INTO messages (...) VALUES (...)
     }
 
     public static List<Message> getMessagesForChat(int chatId) {
+        String url = "jdbc:postgresql://localhost:5432/Telegram";
+        String user = "postgres";
+        String password = "AmirMahdiImani";
+
         List<Message> chatMsgs = new ArrayList<>();
         for (Message m : messages) {
             if (m.getChatid() == chatId) {
                 chatMsgs.add(m);
             }
         }
+
+        //DB program:
+        String query = "select * from messages where chatid = ?";
+        try {
+            Connection conn = DriverManager.getConnection(url, user, password);
+            PreparedStatement ps = conn.prepareStatement(query);
+            ps.setInt(1, chatId);
+            ResultSet rs = ps.executeQuery();
+            while (rs.next()) {
+                int id = rs.getInt("id");
+                String text = rs.getString("text");
+                Timestamp createdAt = rs.getTimestamp("created_at");
+
+                System.out.println("Message ID: " + id +
+                        " | Text: " + text +
+                        " | Date: " + createdAt);
+            }
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+        //finish
+
         // 👉 DB Team: Instead, run SELECT * FROM messages WHERE chatId=?
         return chatMsgs;
     }
