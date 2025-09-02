@@ -11,6 +11,7 @@ public class ChatService {
         chatMembers.get(chatId).add(username);
 
         // 👉 DB Team: Insert into chat_members table
+        // rewrite above comment
     }
 
     public static void leaveChat(int chatId, String username) {
@@ -18,11 +19,13 @@ public class ChatService {
             chatMembers.get(chatId).remove(username);
 
             // 👉 DB Team: DELETE FROM chat_members WHERE chatId=? AND username=?
+            // rewrite above comment
         }
     }
 
     public static Set<String> getMembers(int chatId) {
         // 👉 DB Team: SELECT users from chat_members table
+        // rewrite above comment
         return chatMembers.getOrDefault(chatId, new HashSet<>());
     }
 }

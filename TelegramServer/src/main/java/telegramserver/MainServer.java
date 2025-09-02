@@ -14,11 +14,18 @@ public class MainServer {
         // Start REST API
         HttpServer httpServer = HttpServer.create(new InetSocketAddress(8000), 0);
 
+        // Auth
         httpServer.createContext("/register", new AuthAPI());
         httpServer.createContext("/login", new AuthAPI());
+
+        // User
         httpServer.createContext("/users", new UserAPI());
+
+        // Search
         httpServer.createContext("/search/user", new SearchAPI());
         httpServer.createContext("/search/chat", new SearchAPI());
+
+        // Channels
         httpServer.createContext("/channels/create", new ChannelAPI());
         httpServer.createContext("/channels/join", new ChannelAPI());
         httpServer.createContext("/channels", new ChannelAPI());

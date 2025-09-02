@@ -10,10 +10,12 @@ public class ClientRegistry {
 
     public static void addClient(String username, BufferedWriter writer) {
         clients.put(username, writer);
+        System.out.println("👤 User added to registry: " + username);
     }
 
     public static void removeClient(String username) {
         clients.remove(username);
+        System.out.println("❌ User removed from registry: " + username);
     }
 
     public static BufferedWriter getWriter(String username) {

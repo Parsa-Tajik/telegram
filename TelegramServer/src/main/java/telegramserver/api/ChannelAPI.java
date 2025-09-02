@@ -50,11 +50,12 @@ public class ChannelAPI implements HttpHandler {
             sendResponse(exchange, 200, response);
 
         } else {
-            sendResponse(exchange, 404, "Not found");
+            sendResponse(exchange, 404, gson.toJson(Map.of("status", "error", "message", "Not found")));
         }
     }
 
     private void sendResponse(HttpExchange exchange, int status, String response) throws IOException {
+        exchange.getResponseHeaders().add("Content-Type", "application/json");
         exchange.sendResponseHeaders(status, response.getBytes().length);
         try (OutputStream os = exchange.getResponseBody()) {
             os.write(response.getBytes());

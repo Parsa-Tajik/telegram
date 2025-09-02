@@ -69,9 +69,7 @@ public class ClientHandler implements Runnable {
                 Message msg = new Message(0, content, 0, chatId, 0,
                         new Timestamp(System.currentTimeMillis()), false, false);
 
-                MessageService.saveMessage(msg);
-                // 👉 DB Team: Save message into DB here
-
+                MessageService.saveMessage(msg); // 🔹 Save to DB
                 for (String member : ChatService.getMembers(chatId)) {
                     BufferedWriter w = ClientRegistry.getWriter(member);
                     if (w != null) {

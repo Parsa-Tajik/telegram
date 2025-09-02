@@ -3,6 +3,7 @@ package telegramserver.services;
 import com.google.gson.Gson;
 import telegramserver.models.User;
 
+import java.sql.*;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -10,7 +11,7 @@ import java.util.Map;
 public class UserService {
     private static final Gson gson = new Gson();
 
-    // TEMP in-memory user storage (replace with DB later)
+    // TEMP in-memory storage (fallback)
     private static final Map<String, User> users = new HashMap<>();
 
     public static String registerUser(Map<String, String> req) {
@@ -20,13 +21,23 @@ public class UserService {
             return gson.toJson(Map.of("status", "error", "message", "User already exists"));
         }
 
-        User user = new User(1, req.get("firstName"), req.get("secondName"), req.get("bio"),
-                req.get("phoneNumber"), username, req.get("password"), 0, false, 2025);
+        User user = new User(
+                1,
+                req.get("firstName"),
+                req.get("secondName"),
+                req.get("bio"),
+                req.get("phoneNumber"),
+                username,
+                req.get("password"), // will be stored in tswHash
+                new Timestamp(System.currentTimeMillis()), // last_seen
+                false,
+                new Timestamp(System.currentTimeMillis())  // registered_at
+        );
 
         users.put(username, user);
 
-        // 👉 DB Team: Save this user into `users` table instead of memory
-        // Example: INSERT INTO users (...) VALUES (...);
+        // Save to DB
+        user.handleUser();
 
         return gson.toJson(Map.of("status", "success", "message", "User registered"));
     }
@@ -35,17 +46,33 @@ public class UserService {
         String username = req.get("username");
         String password = req.get("password");
 
-        // 👉 DB Team: Instead of using HashMap, fetch user by username from DB
-        if (!users.containsKey(username)) {
-            return gson.toJson(Map.of("status", "error", "message", "User not found"));
-        }
+        String url = "jdbc:postgresql://localhost:5432/Telegram";
+        String dbUser = "postgres";
+        String dbPass = "AmirMahdiImani";
 
-        User user = users.get(username);
-        if (!user.getTswHash().equals(password)) {
-            return gson.toJson(Map.of("status", "error", "message", "Invalid password"));
-        }
+        try (Connection conn = DriverManager.getConnection(url, dbUser, dbPass)) {
+            String query = "SELECT * FROM users WHERE username = ? AND tsw_hash = ?";
+            PreparedStatement ps = conn.prepareStatement(query);
+            ps.setString(1, username);
+            ps.setString(2, password);
+            ResultSet rs = ps.executeQuery();
 
-        // 👉 DB Team: Update user "isOnline" status in DB
-        return gson.toJson(Map.of("status", "success", "message", "Login successful"));
+            if (rs.next()) {
+                // update online status
+                String update = "UPDATE users SET is_online = ? WHERE username = ?";
+                PreparedStatement ps2 = conn.prepareStatement(update);
+                ps2.setBoolean(1, true);
+                ps2.setString(2, username);
+                ps2.executeUpdate();
+
+                return gson.toJson(Map.of("status", "success", "message", "Login successful"));
+            } else {
+                return gson.toJson(Map.of("status", "error", "message", "Invalid username or password"));
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            return gson.toJson(Map.of("status", "error", "message", "DB error during login"));
+        }
     }
 }
