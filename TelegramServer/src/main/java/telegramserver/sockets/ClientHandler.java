@@ -7,6 +7,7 @@ import telegramserver.services.MessageService;
 
 import java.io.*;
 import java.net.Socket;
+import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.util.StringTokenizer;
 
@@ -31,7 +32,7 @@ public class ClientHandler implements Runnable {
             while ((line = reader.readLine()) != null) {
                 handleCommand(line);
             }
-        } catch (IOException e) {
+        } catch (IOException | SQLException e) {
             e.printStackTrace();
         } finally {
             if (username != null) {
@@ -40,7 +41,7 @@ public class ClientHandler implements Runnable {
         }
     }
 
-    private void handleCommand(String line) throws IOException {
+    private void handleCommand(String line) throws IOException, SQLException {
         StringTokenizer st = new StringTokenizer(line);
         String cmd = st.nextToken();
 
@@ -80,16 +81,21 @@ public class ClientHandler implements Runnable {
                 break;
 
             case "CREATE_CHANNEL":
-                String channelName = st.nextToken();
-                int ownerId = Integer.parseInt(st.nextToken());
-                int channelId = ChannelService.createChannel(channelName, ownerId);
-                sendMessage("✅ Channel created with id " + channelId);
+                String ChannelName = st.nextToken();
+                String description = st.nextToken();
+                boolean isPublic = Boolean.parseBoolean(st.nextToken());
+                int ChannelId = ChannelService.createChannel(ChannelName, description, isPublic);
+                sendMessage("✅ Channel created with id " + ChannelId);
                 break;
 
             case "JOIN_CHANNEL":
-                int joinId = Integer.parseInt(st.nextToken());
-                ChannelService.joinChannel(joinId, username);
-                sendMessage("✅ Joined channel " + joinId);
+                int channelIdToJoin = Integer.parseInt(st.nextToken());
+                int userId = Integer.parseInt(st.nextToken());  // آیدی یوزر
+                boolean isAdmin = Boolean.parseBoolean(st.nextToken());
+                boolean isPublicJoin = Boolean.parseBoolean(st.nextToken());
+                Timestamp joinedAt = new Timestamp(System.currentTimeMillis());
+                ChannelService.joinChannel(username, channelIdToJoin, channelIdToJoin, userId, joinedAt, isAdmin, isPublicJoin);
+                sendMessage("✅ Joined channel " + channelIdToJoin);
                 break;
 
             case "SEND_CHANNEL":
