@@ -1,5 +1,6 @@
 package telegramserver.sockets;
 
+import com.google.gson.Gson;
 import telegramserver.models.Message;
 import telegramserver.services.ChatService;
 import telegramserver.services.ChannelService;
@@ -9,14 +10,15 @@ import java.io.*;
 import java.net.Socket;
 import java.sql.SQLException;
 import java.sql.Timestamp;
-import java.util.StringTokenizer;
+import java.util.Map;
+import java.util.UUID;
 
-// Handles commands from one client
 public class ClientHandler implements Runnable {
     private final Socket socket;
     private BufferedReader reader;
     private BufferedWriter writer;
     private String username;
+    private static final Gson gson = new Gson();
 
     public ClientHandler(Socket socket) {
         this.socket = socket;
@@ -30,7 +32,7 @@ public class ClientHandler implements Runnable {
 
             String line;
             while ((line = reader.readLine()) != null) {
-                handleCommand(line);
+                handleRequest(line);
             }
         } catch (IOException | SQLException e) {
             e.printStackTrace();
@@ -41,83 +43,109 @@ public class ClientHandler implements Runnable {
         }
     }
 
-    private void handleCommand(String line) throws IOException, SQLException {
-        StringTokenizer st = new StringTokenizer(line);
-        String cmd = st.nextToken();
+    private void handleRequest(String line) throws IOException, SQLException {
+        Map<String, Object> request = gson.fromJson(line, Map.class);
+        String type = (String) request.get("type");
+        String id = (String) request.get("id"); // request id from client
+        Map<String, Object> payload = (Map<String, Object>) request.get("payload");
 
-        switch (cmd) {
+        switch (type) {
             case "LOGIN":
-                username = st.nextToken();
+                username = (String) payload.get("username");
                 ClientRegistry.addClient(username, writer);
-                sendMessage("✅ Logged in as " + username);
+                sendResponse(id, "success", Map.of("message", "Logged in as " + username));
                 break;
 
-            case "JOIN":
-                int chatId = Integer.parseInt(st.nextToken());
+            case "JOIN_CHAT":
+                int chatId = ((Double) payload.get("chatId")).intValue();
                 ChatService.joinChat(chatId, username);
-                sendMessage("✅ Joined chat " + chatId);
+                sendResponse(id, "success", Map.of("chatId", chatId));
                 break;
 
-            case "LEAVE":
-                chatId = Integer.parseInt(st.nextToken());
+            case "LEAVE_CHAT":
+                chatId = ((Double) payload.get("chatId")).intValue();
                 ChatService.leaveChat(chatId, username);
-                sendMessage("✅ Left chat " + chatId);
+                sendResponse(id, "success", Map.of("chatId", chatId));
                 break;
 
-            case "SEND":
-                chatId = Integer.parseInt(st.nextToken());
-                String content = line.substring(line.indexOf(" ", line.indexOf(" ") + 1) + 1);
+            case "SEND_MESSAGE":
+                chatId = ((Double) payload.get("chatId")).intValue();
+                String content = (String) payload.get("content");
                 Message msg = new Message(0, content, 0, chatId, 0,
                         new Timestamp(System.currentTimeMillis()), false, false);
 
-                MessageService.saveMessage(msg); // 🔹 Save to DB
+                MessageService.saveMessage(msg);
+
+                // Broadcast event to all chat members
                 for (String member : ChatService.getMembers(chatId)) {
                     BufferedWriter w = ClientRegistry.getWriter(member);
                     if (w != null) {
-                        w.write("[Chat " + chatId + "] " + username + ": " + content + "\n");
-                        w.flush();
+                        sendEvent(w, "NEW_MESSAGE", Map.of(
+                                "chatId", chatId,
+                                "from", username,
+                                "content", content
+                        ));
                     }
                 }
+                sendResponse(id, "success", Map.of("message", "Message delivered"));
                 break;
 
             case "CREATE_CHANNEL":
-                String ChannelName = st.nextToken();
-                String description = st.nextToken();
-                boolean isPublic = Boolean.parseBoolean(st.nextToken());
-                int ChannelId = ChannelService.createChannel(ChannelName, description, isPublic);
-                sendMessage("✅ Channel created with id " + ChannelId);
+                String channelName = (String) payload.get("name");
+                String description = (String) payload.get("description");
+                boolean isPublic = (Boolean) payload.get("isPublic");
+                int channelId = ChannelService.createChannel(channelName, description, isPublic);
+                sendResponse(id, "success", Map.of("channelId", channelId));
                 break;
 
             case "JOIN_CHANNEL":
-                int channelIdToJoin = Integer.parseInt(st.nextToken());
-                int userId = Integer.parseInt(st.nextToken());  // آیدی یوزر
-                boolean isAdmin = Boolean.parseBoolean(st.nextToken());
-                boolean isPublicJoin = Boolean.parseBoolean(st.nextToken());
+                int channelIdToJoin = ((Double) payload.get("channelId")).intValue();
+                int userId = ((Double) payload.get("userId")).intValue();
+                boolean isAdmin = (Boolean) payload.get("isAdmin");
+                boolean isPublicJoin = (Boolean) payload.get("isPublicJoin");
                 Timestamp joinedAt = new Timestamp(System.currentTimeMillis());
                 ChannelService.joinChannel(username, channelIdToJoin, channelIdToJoin, userId, joinedAt, isAdmin, isPublicJoin);
-                sendMessage("✅ Joined channel " + channelIdToJoin);
+                sendResponse(id, "success", Map.of("channelId", channelIdToJoin));
                 break;
 
-            case "SEND_CHANNEL":
-                int chId = Integer.parseInt(st.nextToken());
-                String msgContent = line.substring(line.indexOf(" ", line.indexOf(" ") + 1) + 1);
+            case "SEND_CHANNEL_MESSAGE":
+                int chId = ((Double) payload.get("channelId")).intValue();
+                String msgContent = (String) payload.get("content");
 
                 for (String member : ChannelService.getMembers(chId)) {
                     BufferedWriter w = ClientRegistry.getWriter(member);
                     if (w != null) {
-                        w.write("📢 [Channel " + chId + "] " + username + ": " + msgContent + "\n");
-                        w.flush();
+                        sendEvent(w, "NEW_CHANNEL_MESSAGE", Map.of(
+                                "channelId", chId,
+                                "from", username,
+                                "content", msgContent
+                        ));
                     }
                 }
+                sendResponse(id, "success", Map.of("message", "Channel message delivered"));
                 break;
 
             default:
-                sendMessage("❌ Unknown command: " + cmd);
+                sendResponse(id, "error", Map.of("message", "Unknown command: " + type));
         }
     }
 
-    private void sendMessage(String msg) throws IOException {
-        writer.write(msg + "\n");
+    private void sendResponse(String id, String status, Map<String, Object> payload) throws IOException {
+        Map<String, Object> response = Map.of(
+                "id", id,
+                "status", status,
+                "payload", payload
+        );
+        writer.write(gson.toJson(response) + "\n");
         writer.flush();
+    }
+
+    private void sendEvent(BufferedWriter w, String eventType, Map<String, Object> payload) throws IOException {
+        Map<String, Object> event = Map.of(
+                "event", eventType,
+                "payload", payload
+        );
+        w.write(gson.toJson(event) + "\n");
+        w.flush();
     }
 }

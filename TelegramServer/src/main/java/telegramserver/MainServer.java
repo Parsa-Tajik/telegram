@@ -30,6 +30,17 @@ public class MainServer {
         httpServer.createContext("/channels/join", new ChannelAPI());
         httpServer.createContext("/channels", new ChannelAPI());
 
+        //Groups
+        httpServer.createContext("/groups/create", new GroupAPI());
+        httpServer.createContext("/groups/join", new GroupAPI());
+        httpServer.createContext("/groups/leave", new GroupAPI());
+        httpServer.createContext("/groups", new GroupAPI());
+
+        //PV
+        httpServer.createContext("/pv/start", new PVAPI());
+        httpServer.createContext("/pv", new PVAPI());
+
+
         httpServer.setExecutor(Executors.newCachedThreadPool());
         httpServer.start();
         System.out.println("🌍 REST API running at http://localhost:8000");
