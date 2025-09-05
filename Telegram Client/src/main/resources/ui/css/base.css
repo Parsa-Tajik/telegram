@@ -1,0 +1,89 @@
+/* ---------- Design Tokens (colors only; sizes are literal to avoid JavaFX Size cast issues) ---------- */
+.root {
+    /* Colors */
+    -color-bg:           #0f1519;
+    -color-surface:      #172129;
+    -color-surface-2:    #1d2a33;
+    -color-text:         #e7f1f0;
+    -color-text-muted:   #a7bcc0;
+    -color-accent:       #16c3b1; /* brand turquoise */
+    -color-accent-strong:#10b3a3;
+    -color-danger:       #ef4444;
+
+    /* Shadows */
+    -shadow-1: dropshadow(gaussian, rgba(0,0,0,0.25), 12, 0.2, 0, 3);
+}
+
+.screen { -fx-background-color: -color-bg; }
+
+/* ---------- Typography ---------- */
+.label {
+    -fx-text-fill: -color-text;
+    -fx-font-smoothing-type: lcd;
+}
+.title {
+    -fx-text-fill: -color-text;
+    -fx-font-size: 22px;
+    -fx-font-weight: bold;
+}
+
+/* ---------- Card ---------- */
+.card {
+    -fx-background-color: -color-surface;
+    -fx-background-radius: 18px;  /* literal px */
+    -fx-effect: -shadow-1;
+    -fx-padding: 16px;
+}
+.auth-card { -fx-spacing: 14px; }
+
+/* ---------- Inputs ---------- */
+.input, .text-field, .password-field {
+    -fx-background-color: -color-surface-2;
+    -fx-background-radius: 12px;  /* literal px */
+    -fx-text-fill: -color-text;
+    -fx-prompt-text-fill: -color-text-muted;
+    -fx-padding: 10 14;
+    -fx-border-color: transparent;
+    -fx-border-radius: 12px;      /* literal px */
+}
+.input:focused, .text-field:focused, .password-field:focused {
+    -fx-border-color: -color-accent;
+    -fx-border-width: 1px;
+}
+
+/* ---------- Buttons ---------- */
+.button {
+    -fx-background-radius: 12px;  /* literal px */
+    -fx-padding: 10 14;
+    -fx-text-fill: white;
+    -fx-font-weight: 600;
+}
+.btn-primary { -fx-background-color: -color-accent; }
+.btn-primary:hover { -fx-background-color: -color-accent-strong; }
+
+/* ---------- Hyperlinks & Status ---------- */
+.hyperlink { -fx-text-fill: -color-accent; -fx-border-color: transparent; }
+.status    { -fx-text-fill: -color-text-muted; -fx-font-size: 12px; }
+
+/* ---------- Segmented Theme Buttons ---------- */
+.seg { -fx-background-color: transparent; }
+
+.seg-btn {
+    -fx-background-color: -color-surface-2;
+    -fx-text-fill: -color-text;
+    -fx-background-radius: 8px;   /* literal px */
+    -fx-border-radius: 8px;       /* literal px */
+    -fx-border-color: transparent;
+    -fx-padding: 6 12;
+}
+.seg-btn:hover {
+    -fx-background-color: derive(-color-surface-2, 5%);
+}
+.seg-btn-active {
+    -fx-background-color: -color-accent;
+    -fx-text-fill: white;
+}
+
+/* --- status feedback --- */
+.status-ok  { -fx-text-fill: -color-accent; }
+.status-err { -fx-text-fill: -color-danger; }
