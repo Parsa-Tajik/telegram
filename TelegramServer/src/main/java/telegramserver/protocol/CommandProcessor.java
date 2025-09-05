@@ -187,7 +187,6 @@ public class CommandProcessor {
             ChannelService.joinChannel(username, channelId, channelId, 0, new Timestamp(System.currentTimeMillis()), false, true);
         } catch (Exception e) {
             // try alternative simple call if exists
-            try { ChannelService.joinChannel(channelId, username); } catch (Exception ignored) {}
         }
         return SocketProtocol.buildResponse("JOIN_CHANNEL_OK", id, Map.of("channelId", channelId, "username", username));
     }

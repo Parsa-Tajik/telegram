@@ -6,6 +6,7 @@ import com.sun.net.httpserver.HttpHandler;
 import telegramserver.services.ChannelService;
 
 import java.io.*;
+import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -22,9 +23,7 @@ public class ChannelAPI implements HttpHandler {
         if ("/channels/create".equals(path) && "POST".equalsIgnoreCase(method)) {
             Map<String, String> req = gson.fromJson(new InputStreamReader(exchange.getRequestBody()), Map.class);
             String name = req.get("name");
-            int ownerId = Integer.parseInt(req.get("ownerId"));
-
-            int channelId = ChannelService.createChannel(name, ownerId);
+            int channelId = Integer.parseInt(req.get("channel_id"));
 
             Map<String, Object> res = new HashMap<>();
             res.put("status", "success");
@@ -39,14 +38,16 @@ public class ChannelAPI implements HttpHandler {
             int channelId = Integer.parseInt(req.get("channelId"));
             String username = req.get("username");
 
-            ChannelService.joinChannel(channelId, username);
-
             response = gson.toJson(Map.of("status", "success", "message", username + " joined channel " + channelId));
             sendResponse(exchange, 200, response);
 
         } else if (path.startsWith("/channels/") && method.equalsIgnoreCase("GET")) {
             int channelId = Integer.parseInt(path.replace("/channels/", ""));
-            response = gson.toJson(ChannelService.getChannelInfo(channelId));
+            try {
+                response = gson.toJson(ChannelService.getChannelInfo(channelId));
+            } catch (SQLException e) {
+                throw new RuntimeException(e);
+            }
             sendResponse(exchange, 200, response);
 
         } else {

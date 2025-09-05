@@ -1,4 +1,4 @@
-apackage telegramserver.api;
+package telegramserver.api;
 
 import com.google.gson.Gson;
 import com.sun.net.httpserver.HttpExchange;

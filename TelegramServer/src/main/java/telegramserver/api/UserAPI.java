@@ -7,6 +7,8 @@ import telegramserver.models.User;
 
 import java.io.IOException;
 import java.io.OutputStream;
+import java.sql.Timestamp;
+import java.time.Instant;
 
 // Handles /users/{id} endpoint
 public class UserAPI implements HttpHandler {
@@ -22,8 +24,10 @@ public class UserAPI implements HttpHandler {
             int userId = Integer.parseInt(path.replace("/users/", ""));
 
             // 👉 DB Team: Fetch user info by ID from DB instead of dummy
+            Instant now = Instant.now();
+            Timestamp ts = Timestamp.from(now);
             User dummy = new User(userId, "Ali", "Nadi", "This is bio",
-                    "0912000000", "ali123", "hashPass", 0, true, 2025);
+                    "0912000000", "ali123", "hashPass",ts, true,ts);
 
             response = gson.toJson(dummy);
             exchange.sendResponseHeaders(200, response.length());

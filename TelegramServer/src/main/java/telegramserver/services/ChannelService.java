@@ -48,7 +48,7 @@ public class ChannelService {
         channelMembers.putIfAbsent(channelId, new HashSet<>());
         channelMembers.get(channelId).add(username);
 
-        String sql = "INSERT INTO channel_members (id,channel_id,user_id,joined_at,is_admin,is_accepted) VALUES (?, ?)";
+        String sql = "INSERT INTO channel_members (id,channel_id,user_id,joined_at,is_admin,is_accepted) VALUES (?, ?,?,?,?,?)";
         try (Connection conn = DriverManager.getConnection(url, user, password);
              PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setInt(1, id);
@@ -67,7 +67,7 @@ public class ChannelService {
     }
 
     public static Set<String> getMembers(int channelId) throws SQLException {
-        String sql = "SELECT user_id FROM members WHERE channel_id=?";
+        String sql = "SELECT user_id FROM channel_members WHERE channel_id=?";
         Set<String> members = new HashSet<>();
 
         try (Connection conn = DriverManager.getConnection(url, user, password);

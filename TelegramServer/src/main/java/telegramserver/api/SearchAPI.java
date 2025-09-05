@@ -8,6 +8,7 @@ import telegramserver.models.User;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.sql.*;
+import java.time.Instant;
 import java.util.*;
 
 public class SearchAPI implements HttpHandler {
@@ -54,9 +55,11 @@ public class SearchAPI implements HttpHandler {
                 //finish
 
                 // 👉 DB Team: Run SELECT query to find user by username
+                Instant now = Instant.now();
+            Timestamp ts = Timestamp.from(now);
                 if (username.equals("ali123")) {
                     User u = new User(1, "Ali", "Nadi", "Bio",
-                            "0912000000", "ali123", "hash", 0, true, 2025);
+                            "0912000000", "ali123", "hash", ts, true, ts);
                     response = gson.toJson(u);
                     exchange.sendResponseHeaders(200, response.length());
                 } else {

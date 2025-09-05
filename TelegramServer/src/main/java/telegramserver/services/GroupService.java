@@ -26,24 +26,26 @@ public class GroupService {
 
     // Create a group, persist to DB if possible
     public static int createGroup(String name, String description, boolean isPublic, int ownerUserId) {
-        // Try DB insert and get generated id
-        String sql = "INSERT INTO groups (group_name, description, is_public) VALUES (?, ?, ?) RETURNING id";
+        int Id =(int)(Math.random()*100);       // Try DB insert and get generated id
+        String sql = "INSERT INTO groups (id,group_name, description, is_public) VALUES (?, ?, ?) RETURNING id";
         try (Connection conn = DriverManager.getConnection(URL, DB_USER, DB_PASS);
              PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setString(1, name);
-            ps.setString(2, description);
-            ps.setBoolean(3, isPublic);
+            ps.setInt(1, Id);
+            ps.setString(2, name);
+            ps.setString(3, description);
+            ps.setBoolean(4, isPublic);
             ResultSet rs = ps.executeQuery();
             if (rs.next()) {
                 int groupId = rs.getInt(1);
                 // Also insert into group_members as owner/admin
-                String minsert = "INSERT INTO group_members (group_id, user_id, joined_at, is_admin, is_accepted) VALUES (?, ?, ?, ?, ?)";
+                String minsert = "INSERT INTO group_members (id,group_id, user_id, joined_at, is_admin, is_accepted) VALUES (?, ?, ?, ?, ?)";
                 try (PreparedStatement mps = conn.prepareStatement(minsert)) {
-                    mps.setInt(1, groupId);
-                    mps.setInt(2, ownerUserId);
-                    mps.setTimestamp(3, new Timestamp(System.currentTimeMillis()));
-                    mps.setBoolean(4, true);
+                    mps.setInt(1, Id);
+                    mps.setInt(2, groupId);
+                    mps.setInt(3, ownerUserId);
+                    mps.setTimestamp(4, new Timestamp(System.currentTimeMillis()));
                     mps.setBoolean(5, true);
+                    mps.setBoolean(6, true);
                     mps.executeUpdate();
                 } catch (SQLException e) {
                     // non-fatal, keep going
@@ -83,16 +85,17 @@ public class GroupService {
             groupMembers.get(groupId).add(username);
             return true;
         }
-
+        int Id = (int)(Math.random()*100);
         // Insert into DB group_members
-        String sql = "INSERT INTO group_members (group_id, user_id, joined_at, is_admin, is_accepted) VALUES (?, ?, ?, ?, ?)";
+        String sql = "INSERT INTO group_members (id,group_id, user_id, joined_at, is_admin, is_accepted) VALUES (?, ?, ?, ?, ?)";
         try (Connection conn = DriverManager.getConnection(URL, DB_USER, DB_PASS);
              PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setInt(1, groupId);
-            ps.setInt(2, uid);
-            ps.setTimestamp(3, new Timestamp(System.currentTimeMillis()));
-            ps.setBoolean(4, false);
-            ps.setBoolean(5, true);
+            ps.setInt(1, Id);
+            ps.setInt(2, groupId);
+            ps.setInt(3, uid);
+            ps.setTimestamp(4, new Timestamp(System.currentTimeMillis()));
+            ps.setBoolean(5, false);
+            ps.setBoolean(6, true);
             ps.executeUpdate();
             return true;
         } catch (SQLException e) {

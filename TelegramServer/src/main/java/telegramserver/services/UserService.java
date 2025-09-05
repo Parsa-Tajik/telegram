@@ -39,14 +39,14 @@ public class UserService {
 
     public static String loginUser(Map<String, String> req) {
         String username = req.get("username");
-        String password = req.get("password");
+        String Password = req.get("password");
         // DB program
         String query = "SELECT * FROM users WHERE username = ? AND password = ?";
         try{
             Connection conn = DriverManager.getConnection(url, USER, password);
             PreparedStatement ps = conn.prepareStatement(query);
             ps.setString(1, username);
-            ps.setString(2, password);
+            ps.setString(2, Password);
             ResultSet rs = ps.executeQuery();
         }
         catch (Exception e) {
