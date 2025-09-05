@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<BorderPane xmlns="http://javafx.com/javafx/17" xmlns:fx="http://javafx.com/fxml/1"
+            fx:controller="com.telegram.telegrampromium.controller.ChatListController"
+            styleClass="screen">
+
+    <top>
+        <HBox spacing="12" alignment="CENTER_LEFT" BorderPane.alignment="CENTER">
+            <padding><Insets top="12" right="16" bottom="12" left="16"/></padding>
+            <Label fx:id="titleLabel" styleClass="title"/>
+        </HBox>
+    </top>
+
+    <center>
+        <ListView fx:id="list" />
+    </center>
+</BorderPane>

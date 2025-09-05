@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<BorderPane xmlns="http://javafx.com/javafx/17" xmlns:fx="http://javafx.com/fxml/1"
+            fx:controller="com.telegram.telegrampromium.controller.SignUpController"
+            styleClass="screen">
+
+    <center>
+        <StackPane BorderPane.alignment="CENTER">
+            <VBox spacing="14" alignment="CENTER" maxWidth="340" styleClass="card auth-card">
+                <padding><Insets top="24" right="24" bottom="24" left="24"/></padding>
+
+                <Label text="Create your account" styleClass="title"/>
+
+                <TextField fx:id="displayNameField" promptText="Display name" maxWidth="320" styleClass="input"/>
+                <TextField fx:id="phoneField"       promptText="Phone"        maxWidth="320" styleClass="input"/>
+                <TextField fx:id="usernameField"    promptText="Username"     maxWidth="320" styleClass="input"/>
+                <PasswordField fx:id="passwordField" promptText="Password"    maxWidth="320" styleClass="input"/>
+
+                <Button fx:id="signUpButton" text="Sign up" maxWidth="320"
+                        onAction="#onSignUpClick" styleClass="btn-primary"/>
+
+                <Button fx:id="backButton" text="Back" onAction="#onBackClick"/>
+
+                <Label fx:id="statusLabel" styleClass="status"/>
+
+                <!-- Segmented theme switcher -->
+                <HBox spacing="8" alignment="CENTER" styleClass="seg">
+                    <Label text="Theme"/>
+                    <Button fx:id="lightBtn" text="Light" onAction="#onLightClick" styleClass="seg-btn"/>
+                    <Button fx:id="darkBtn"  text="Dark"  onAction="#onDarkClick"  styleClass="seg-btn"/>
+                </HBox>
+            </VBox>
+        </StackPane>
+    </center>
+</BorderPane>
