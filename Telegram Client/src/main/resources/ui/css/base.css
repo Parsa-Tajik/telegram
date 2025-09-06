@@ -126,3 +126,61 @@
 .menu-item:disabled .label {
     -fx-opacity: 0.5;
 }
+
+/* ===== Chat header ===== */
+.chat-header {
+    -fx-background-color: -color-surface;
+    -fx-background-radius: 0 0 16px 16px;
+    -fx-effect: dropshadow(gaussian, -shadow-color, 12, 0.2, 0, 2);
+}
+
+/* ===== Messages list (base) ===== */
+.list-view {
+    -fx-background-color: transparent;
+    -fx-control-inner-background: transparent;
+    -fx-background-insets: 0;
+}
+
+/* ===== Composer ===== */
+.composer {
+    -fx-background-color: -color-surface;
+    -fx-background-radius: 16px 16px 0 0;
+    -fx-spacing: 10;
+}
+.composer .text-area {
+    -fx-background-color: -color-surface-2;
+    -fx-background-radius: 12px;
+    -fx-text-fill: -color-text;
+    -fx-prompt-text-fill: -color-text-muted;
+    -fx-padding: 8 10;
+}
+
+/* ===== Message bubbles (placeholders for 4.2) ===== */
+.bubble-in {
+    -fx-background-color: -color-surface-2;
+    -fx-background-radius: 14px 14px 14px 4px;
+    -fx-padding: 8 10;
+}
+.bubble-out {
+    -fx-background-color: -color-accent;
+    -fx-background-radius: 14px 14px 4px 14px;
+    -fx-padding: 8 10;
+    -fx-text-fill: white;
+}
+.date-sep {
+    -fx-background-color: -hover-tint;
+    -fx-background-radius: 12px;
+    -fx-padding: 3 10;
+    -fx-text-fill: -color-text-muted;
+    -fx-font-weight: 700;
+    -fx-alignment: center;
+}
+
+/* New-message chip (next stage uses it) */
+.chip-new {
+    -fx-background-color: -color-accent;
+    -fx-text-fill: white;
+    -fx-background-radius: 12px;
+    -fx-padding: 4 10;
+    -fx-font-weight: 800;
+}

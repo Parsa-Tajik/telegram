@@ -10,6 +10,7 @@ import javafx.beans.value.ChangeListener;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.control.*;
+import javafx.scene.input.MouseButton;
 import javafx.scene.layout.Region;
 
 import java.net.URL;
@@ -33,6 +34,7 @@ public final class ChatListController {
 
 
     private final App app;
+    private final com.telegram.telegrampromium.nav.Navigator nav;
 
     @FXML private Label titleLabel;
     @FXML private ListView<ChatSummary> list;
@@ -46,7 +48,9 @@ public final class ChatListController {
 
     public ChatListController(App app, com.telegram.telegrampromium.nav.Navigator nav) {
         this.app = Objects.requireNonNull(app);
+        this.nav = Objects.requireNonNull(nav);
     }
+
 
     @FXML
     private void initialize() {
@@ -69,6 +73,14 @@ public final class ChatListController {
                     }
                     setText(null);
                     setGraphic(root);
+
+                    this.setOnMouseClicked(ev -> {
+                        // Only left-click, single click, and non-empty cell
+                        if (ev.getButton() == MouseButton.PRIMARY && ev.getClickCount() == 1 && !isEmpty()) {
+                            var it = getItem();
+                            nav.openChat(it.id(), it.kind(), it.title());
+                        }
+                    });
 
                     // Context menu per item (Pin/Unpin)
                     ContextMenu menu = new ContextMenu();

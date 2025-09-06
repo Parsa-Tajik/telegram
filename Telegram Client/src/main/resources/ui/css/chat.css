@@ -1,0 +1,144 @@
+/* =========================================================
+   Telegram PROmium — Chat screen (scoped styles)
+   Matches: tgm-chat-screen + all its children
+   Depends on theme tokens defined in theme_dark.css/theme_light.css
+   ========================================================= */
+
+/* Root background from theme */
+.tgm-chat-screen {
+    -fx-background-color: -color-bg;
+}
+
+/* ===== Header ===== */
+.tgm-chat-screen .tgm-header {
+    -fx-background-color: -color-surface;
+    -fx-background-radius: 0 0 16px 16px;
+    -fx-effect: dropshadow(gaussian, -shadow-color, 12, 0.20, 0, 2);
+}
+
+/* Back / Search buttons: ghost-style with hover tint */
+.tgm-chat-screen .tgm-back,
+.tgm-chat-screen .tgm-search {
+    -fx-min-width: 36px;
+    -fx-min-height: 36px;
+    -fx-padding: 0;
+    -fx-background-color: transparent;
+    -fx-background-insets: 0;
+    -fx-background-radius: 10px;
+    -fx-text-fill: -color-text;
+    -fx-font-size: 16px;
+}
+.tgm-chat-screen .tgm-back:hover,
+.tgm-chat-screen .tgm-search:hover {
+    -fx-background-color: -hover-tint;
+}
+
+/* Avatar container in header */
+.tgm-chat-screen .tgm-avatar {
+    -fx-background-color: -avatar-bg;
+    -fx-background-radius: 18px;
+    -fx-border-color: -color-accent;
+    -fx-border-width: 1px;
+    -fx-border-radius: 18px;
+}
+
+/* Title / subtitle */
+.tgm-chat-screen .tgm-title {
+    -fx-text-fill: -color-text;
+    -fx-font-size: 16px;
+    -fx-font-weight: 800;
+}
+.tgm-chat-screen .tgm-subtitle {
+    -fx-text-fill: -color-text-muted;
+    -fx-font-size: 11px;
+}
+
+/* ===== Messages list ===== */
+.tgm-chat-screen .tgm-msg-list {
+    -fx-background-color: transparent;
+    -fx-control-inner-background: transparent;
+    -fx-background-insets: 0;
+    -fx-padding: 8 8 0 8;
+}
+.tgm-chat-screen .tgm-msg-list .list-cell {
+    -fx-background-color: transparent;
+    -fx-padding: 4 0;
+}
+
+/* ===== Composer (bottom bar) ===== */
+.tgm-chat-screen .tgm-composer {
+    -fx-background-color: -color-surface;
+    -fx-background-radius: 16px 16px 0 0;
+    -fx-spacing: 10;
+    -fx-effect: dropshadow(gaussian, -shadow-color, 12, 0.18, 0, -2);
+}
+
+/* TextArea themed (non-white) */
+.tgm-chat-screen .tgm-input {
+    -fx-background-color: transparent;         /* let .content paint the fill */
+    -fx-background-insets: 0;
+    -fx-text-fill: -color-text;
+    -fx-prompt-text-fill: -color-text-muted;
+    -fx-padding: 8 10;
+}
+.tgm-chat-screen .tgm-input .scroll-pane {
+    -fx-background-color: transparent;
+}
+.tgm-chat-screen .tgm-input .content {
+    -fx-background-color: -color-surface-2;    /* actual fill for editor area */
+    -fx-background-radius: 12px;
+    -fx-background-insets: 0;
+}
+.tgm-chat-screen .tgm-input:focused .content {
+    -fx-background-color: -color-surface-3;
+}
+
+/* ===== Send button — force accent, avoid Modena overlays ===== */
+.tgm-chat-screen .tgm-send {
+    -fx-min-width: 44px;
+    -fx-min-height: 44px;
+    -fx-background-radius: 12px;
+    -fx-background-insets: 0;                  /* neutralize Modena layered bg */
+    -fx-background-color: -color-accent;       /* accent color */
+    -fx-text-fill: white;
+    -fx-font-weight: 800;
+    -fx-font-size: 16px;
+}
+.tgm-chat-screen .tgm-send:hover {
+    -fx-background-color: derive(-color-accent, -8%);
+}
+.tgm-chat-screen .tgm-send:armed {
+    -fx-background-color: derive(-color-accent, -14%);
+}
+.tgm-chat-screen .tgm-send:disabled {
+    -fx-opacity: 0.55;                         /* keep color; just dim it */
+}
+
+/* ===== Placeholders for bubbles / separators (used in 4.x) ===== */
+.tgm-chat-screen .bubble-in {
+    -fx-background-color: -color-surface-2;
+    -fx-background-radius: 14px 14px 14px 4px;
+    -fx-padding: 8 10;
+    -fx-text-fill: -color-text;
+}
+.tgm-chat-screen .bubble-out {
+    -fx-background-color: -color-accent;
+    -fx-background-radius: 14px 14px 4px 14px;
+    -fx-padding: 8 10;
+    -fx-text-fill: white;
+}
+.tgm-chat-screen .date-sep {
+    -fx-background-color: -hover-tint;
+    -fx-background-radius: 12px;
+    -fx-padding: 3 10;
+    -fx-text-fill: -color-text-muted;
+    -fx-font-weight: 700;
+    -fx-alignment: center;
+}
+.tgm-chat-screen .chip-new {
+    -fx-background-color: -color-accent;
+    -fx-text-fill: white;
+    -fx-background-radius: 12px;
+    -fx-padding: 4 10;
+    -fx-font-weight: 800;
+}
