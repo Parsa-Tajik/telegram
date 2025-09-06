@@ -11,15 +11,15 @@
 
     <padding><Insets top="10" right="16" bottom="10" left="16"/></padding>
 
-    <!-- Avatar placeholder -->
+    <!-- Avatar -->
     <StackPane fx:id="avatar" prefWidth="42" prefHeight="42" styleClass="avatar">
         <Circle radius="21"/>
-        <!-- Future: add Label with initial if needed -->
     </StackPane>
 
     <!-- Title + Preview -->
     <VBox spacing="4" HBox.hgrow="ALWAYS">
-        <HBox alignment="CENTER_LEFT" spacing="8">
+        <HBox alignment="CENTER_LEFT" spacing="6">
+            <Label fx:id="pinIcon" text="📌" visible="false" managed="false" styleClass="pin-icon"/>
             <Label fx:id="titleLabel" styleClass="chat-title"/>
         </HBox>
         <Label fx:id="previewLabel" styleClass="chat-preview" maxWidth="Infinity"/>

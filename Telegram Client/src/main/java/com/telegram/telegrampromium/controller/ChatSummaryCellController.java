@@ -8,7 +8,7 @@ import javafx.scene.layout.StackPane;
 
 /**
  * FXML-backed list cell for chat summaries.
- * Displays avatar placeholder, title, preview, time, and unread badge.
+ * Displays avatar placeholder, title, preview, time, unread badge, and pin icon.
  */
 public final class ChatSummaryCellController {
 
@@ -18,23 +18,25 @@ public final class ChatSummaryCellController {
     @FXML private Label timeLabel;
     @FXML private HBox   unreadBadge;
     @FXML private Label  unreadCount;
+    @FXML private Label  pinIcon; // 📌
 
     public void bind(String title, String preview, String when,
-                     int unread, ChatSummary.Kind kind, boolean muted) {
+                     int unread, ChatSummary.Kind kind, boolean muted, boolean pinned) {
         titleLabel.setText(title == null ? "" : title);
         previewLabel.setText(preview == null ? "" : preview);
         timeLabel.setText(when == null ? "" : when);
 
-        // Unread badge visibility
         boolean showBadge = unread > 0;
         unreadBadge.setVisible(showBadge);
         unreadBadge.setManaged(showBadge);
         unreadCount.setText(showBadge ? String.valueOf(unread) : "");
 
-        // Avatar placeholder with initial letter
+        // Avatar placeholder initial
         String initial = title != null && !title.isBlank() ? title.substring(0, 1).toUpperCase() : "?";
-        avatar.setUserData(initial); // optional; could be used by a future skin
+        avatar.setUserData(initial);
 
-        // Muted chats can be styled via CSS pseudo-class if needed later.
+        // Pin icon visibility
+        pinIcon.setVisible(pinned);
+        pinIcon.setManaged(pinned);
     }
 }
