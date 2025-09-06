@@ -1,89 +1,94 @@
-/* ---------- Design Tokens (colors only; sizes are literal to avoid JavaFX Size cast issues) ---------- */
-.root {
-    /* Colors */
-    -color-bg:           #0f1519;
-    -color-surface:      #172129;
-    -color-surface-2:    #1d2a33;
-    -color-text:         #e7f1f0;
-    -color-text-muted:   #a7bcc0;
-    -color-accent:       #16c3b1; /* brand turquoise */
-    -color-accent-strong:#10b3a3;
-    -color-danger:       #ef4444;
-
-    /* Shadows */
-    -shadow-1: dropshadow(gaussian, rgba(0,0,0,0.25), 12, 0.2, 0, 3);
-}
-
+/* ===== Base (shared) ===== */
 .screen { -fx-background-color: -color-bg; }
 
-/* ---------- Typography ---------- */
-.label {
-    -fx-text-fill: -color-text;
-    -fx-font-smoothing-type: lcd;
-}
-.title {
-    -fx-text-fill: -color-text;
-    -fx-font-size: 22px;
-    -fx-font-weight: bold;
-}
+/* Typography */
+.label { -fx-text-fill: -color-text; -fx-font-smoothing-type: lcd; }
+.title { -fx-text-fill: -color-text; -fx-font-size: 22px; -fx-font-weight: 800; }
 
-/* ---------- Card ---------- */
+/* Cards */
 .card {
     -fx-background-color: -color-surface;
-    -fx-background-radius: 18px;  /* literal px */
-    -fx-effect: -shadow-1;
-    -fx-padding: 16px;
+    -fx-background-radius: 18px;
+    -fx-padding: 18px;
+    -fx-effect: dropshadow(gaussian, -shadow-color, 12, 0.25, 0, 3);
 }
 .auth-card { -fx-spacing: 14px; }
 
-/* ---------- Inputs ---------- */
+/* Inputs */
 .input, .text-field, .password-field {
     -fx-background-color: -color-surface-2;
-    -fx-background-radius: 12px;  /* literal px */
+    -fx-background-radius: 12px;
     -fx-text-fill: -color-text;
     -fx-prompt-text-fill: -color-text-muted;
     -fx-padding: 10 14;
     -fx-border-color: transparent;
-    -fx-border-radius: 12px;      /* literal px */
+    -fx-border-radius: 12px;
 }
 .input:focused, .text-field:focused, .password-field:focused {
     -fx-border-color: -color-accent;
     -fx-border-width: 1px;
 }
 
-/* ---------- Buttons ---------- */
+/* Buttons */
 .button {
-    -fx-background-radius: 12px;  /* literal px */
+    -fx-background-radius: 12px;
     -fx-padding: 10 14;
-    -fx-text-fill: white;
-    -fx-font-weight: 600;
+    -fx-text-fill: -btn-text;
+    -fx-font-weight: 700;
+    -fx-border-color: transparent;
+    -fx-cursor: hand;
 }
 .btn-primary { -fx-background-color: -color-accent; }
 .btn-primary:hover { -fx-background-color: -color-accent-strong; }
+.btn-ghost {
+    -fx-background-color: transparent;
+    -fx-text-fill: -color-accent;
+}
+.btn-ghost:hover { -fx-background-color: -hover-tint; }
 
-/* ---------- Hyperlinks & Status ---------- */
-.hyperlink { -fx-text-fill: -color-accent; -fx-border-color: transparent; }
-.status    { -fx-text-fill: -color-text-muted; -fx-font-size: 12px; }
+/* Links & status */
+.hyperlink { -fx-text-fill: -color-accent; -fx-border-color: transparent; -fx-cursor: hand; }
+.status     { -fx-font-size: 12px; }
+.status-ok  { -fx-text-fill: -color-accent; }
+.status-err { -fx-text-fill: -color-danger; }
 
-/* ---------- Segmented Theme Buttons ---------- */
+/* Segmented theme buttons */
 .seg { -fx-background-color: transparent; }
-
 .seg-btn {
     -fx-background-color: -color-surface-2;
     -fx-text-fill: -color-text;
-    -fx-background-radius: 8px;   /* literal px */
-    -fx-border-radius: 8px;       /* literal px */
+    -fx-background-radius: 8px;
+    -fx-border-radius: 8px;
     -fx-border-color: transparent;
     -fx-padding: 6 12;
 }
-.seg-btn:hover {
-    -fx-background-color: derive(-color-surface-2, 5%);
+.seg-btn:hover { -fx-background-color: -hover-tint; }
+.seg-btn-active { -fx-background-color: -color-accent; -fx-text-fill: white; }
+
+/* ===== ListView modern (no zebra) ===== */
+.list-view {
+    -fx-background-color: transparent;
+    -fx-control-inner-background: transparent;
+    -fx-background-insets: 0;
 }
-.seg-btn-active {
-    -fx-background-color: -color-accent;
-    -fx-text-fill: white;
+.list-cell { -fx-background-color: transparent; -fx-padding: 0; }
+.list-cell:odd, .list-cell:even,
+.list-cell:filled:selected, .list-cell:filled:hover {
+    -fx-background-color: transparent;
 }
 
-/* --- status feedback --- */
-.status-ok  { -fx-text-fill: -color-accent; }
-.status-err { -fx-text-fill: -color-danger; }
+/* Chat row */
+.chat-row { -fx-background-color: transparent; }
+.chat-row:hover { -fx-background-color: -row-hover; }
+
+.avatar {
+    -fx-background-color: -avatar-bg;
+    -fx-background-radius: 21px;
+}
+
+.chat-title  { -fx-text-fill: -color-text;       -fx-font-size: 14px; -fx-font-weight: 700; }
+.chat-preview{ -fx-text-fill: -color-text-muted; -fx-font-size: 12px; }
+.chat-time   { -fx-text-fill: -color-text-muted; -fx-font-size: 11px; }
+
+.badge { -fx-background-color: -color-accent; -fx-background-radius: 10px; -fx-padding: 2 6; -fx-alignment: center; }
+.badge-text { -fx-text-fill: white; -fx-font-size: 11px; -fx-font-weight: 800; }

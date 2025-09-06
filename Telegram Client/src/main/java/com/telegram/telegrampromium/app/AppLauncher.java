@@ -7,10 +7,6 @@ import javafx.stage.Stage;
 
 import java.io.IOException;
 
-/**
- * JavaFX entry point. Boots UI, theming, and the networking stack.
- * Also installs lightweight console logging for inbound events and responses.
- */
 public final class AppLauncher extends Application {
 
     @Override
@@ -21,21 +17,16 @@ public final class AppLauncher extends Application {
 
         nav.start(View.LOGIN);
 
+        // Apply theme BEFORE showing the stage to avoid initial CSS lookup warnings
+        app.theme().apply(stage.getScene(), app.theme().current());
+
         stage.setTitle("Telegram PROmium");
         stage.show();
 
-        app.theme().apply(stage.getScene(), app.theme().current());
-
         try {
-            // Connect to local dev server on TCP 1688
             app.startNetworking("localhost", 1688);
-
-            // Console logging: all EVENTS
             app.eventBus().subscribe(evt -> System.out.println("[EVENT] " + evt));
-
-            // Console logging: all RESPONSES (after futures are completed)
             app.router().setOnComplete(resp -> System.out.println("[RESP ] " + resp));
-
         } catch (IOException e) {
             System.err.println("[Client] Failed to connect: " + e.getMessage());
         }

@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.shape.Circle?>
+
+<HBox xmlns="http://javafx.com/javafx/17" xmlns:fx="http://javafx.com/fxml/1"
+      fx:controller="com.telegram.telegrampromium.controller.cell.ChatSummaryCellController"
+      spacing="12" alignment="CENTER_LEFT" styleClass="chat-row">
+
+    <padding><Insets top="10" right="16" bottom="10" left="16"/></padding>
+
+    <!-- Avatar placeholder -->
+    <StackPane fx:id="avatar" prefWidth="42" prefHeight="42" styleClass="avatar">
+        <Circle radius="21"/>
+        <!-- Future: add Label with initial if needed -->
+    </StackPane>
+
+    <!-- Title + Preview -->
+    <VBox spacing="4" HBox.hgrow="ALWAYS">
+        <HBox alignment="CENTER_LEFT" spacing="8">
+            <Label fx:id="titleLabel" styleClass="chat-title"/>
+        </HBox>
+        <Label fx:id="previewLabel" styleClass="chat-preview" maxWidth="Infinity"/>
+    </VBox>
+
+    <!-- Time + Unread -->
+    <VBox alignment="CENTER_RIGHT" spacing="6">
+        <Label fx:id="timeLabel" styleClass="chat-time"/>
+        <HBox fx:id="unreadBadge" alignment="CENTER" spacing="4" styleClass="badge">
+            <Label fx:id="unreadCount" styleClass="badge-text"/>
+        </HBox>
+    </VBox>
+</HBox>

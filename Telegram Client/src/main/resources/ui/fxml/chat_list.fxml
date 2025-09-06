@@ -16,6 +16,7 @@
     </top>
 
     <center>
-        <ListView fx:id="list" />
+        <ListView fx:id="list"/>
     </center>
+
 </BorderPane>

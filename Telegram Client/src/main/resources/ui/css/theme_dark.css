@@ -1,9 +1,30 @@
+/* ===== Dark Theme Tokens ===== */
 .root {
-    -color-bg:          #0e1518; /* مکمل تیره */
-    -color-surface:     #162128;
-    -color-surface-2:   #1b2a33;
-    -color-text:        #e6f2f1;
-    -color-text-muted:  #9eb5ba;
-    -color-accent:      #14c9b5; /* فیروزه‌ای روشن */
-    -color-accent-strong:#0fb6a5;
+    /* brand */
+    -color-accent:        #15c3b1;
+    -color-accent-strong: #12b1a2;
+
+    /* palette */
+    -color-bg:        #0e1418;
+    -color-surface:   #151d24;
+    -color-surface-2: #1b2430;
+
+    -color-text:        #e9f1f0;
+    -color-text-muted:  #9fb4b8;
+
+    -color-danger:  #ef5555;
+    -color-divider: #26323a;
+
+    /* components */
+    -btn-text:    #ffffff;
+    -hover-tint:  rgba(255,255,255,0.04);
+    -row-hover:   rgba(255,255,255,0.04);
+    -avatar-bg:   #0b8379;
+
+    /* shadows */
+    -shadow-color: rgba(0,0,0,0.65);
+
+    /* focus colors (reduce blue halo) */
+    -fx-focus-color: -color-accent;
+    -fx-faint-focus-color: transparent;
 }

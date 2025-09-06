@@ -1,9 +1,30 @@
+/* ===== Light Theme Tokens ===== */
 .root {
-    -color-bg:          #f6fbfb;
-    -color-surface:     #ffffff;
-    -color-surface-2:   #f1f6f7;
-    -color-text:        #122326;
-    -color-text-muted:  #6a7f84;
-    -color-accent:      #14b8a6; /* فیروزه‌ای روشن */
-    -color-accent-strong:#0ea899;
+    /* brand */
+    -color-accent:        #15c3b1;
+    -color-accent-strong: #12b1a2;
+
+    /* palette */
+    -color-bg:        #f7fbfb;
+    -color-surface:   #ffffff;
+    -color-surface-2: #f1f6f6;
+
+    -color-text:        #0e1418;
+    -color-text-muted:  #6c7e86;
+
+    -color-danger:  #e53935;
+    -color-divider: #e6eef0;
+
+    /* components */
+    -btn-text:    #ffffff;
+    -hover-tint:  rgba(0,0,0,0.04);
+    -row-hover:   rgba(0,0,0,0.035);
+    -avatar-bg:   #13b2a2;
+
+    /* shadows */
+    -shadow-color: rgba(0,0,0,0.18);
+
+    /* focus */
+    -fx-focus-color: -color-accent;
+    -fx-faint-focus-color: rgba(21,195,177,0.15);
 }
