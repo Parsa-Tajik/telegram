@@ -1,10 +1,9 @@
-/* Light Theme overrides */
 .root {
-    -color-bg:           #f6fbfb;
-    -color-surface:      #ffffff;
-    -color-surface-2:    #f1f6f7;
-    -color-text:         #122326;
-    -color-text-muted:   #6a7f84;
-    -color-accent:       #14b8a6;
+    -color-bg:          #f6fbfb;
+    -color-surface:     #ffffff;
+    -color-surface-2:   #f1f6f7;
+    -color-text:        #122326;
+    -color-text-muted:  #6a7f84;
+    -color-accent:      #14b8a6; /* فیروزه‌ای روشن */
     -color-accent-strong:#0ea899;
 }

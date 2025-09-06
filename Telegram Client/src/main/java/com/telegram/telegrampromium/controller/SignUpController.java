@@ -5,7 +5,6 @@ import com.telegram.telegrampromium.api.AuthenticationAPI;
 import com.telegram.telegrampromium.app.App;
 import com.telegram.telegrampromium.app.Theme;
 import com.telegram.telegrampromium.nav.Navigator;
-import com.telegram.telegrampromium.nav.View;
 import com.telegram.telegrampromium.security.PasswordHasher;
 import javafx.application.Platform;
 import javafx.fxml.FXML;
@@ -17,7 +16,7 @@ import java.util.regex.Pattern;
 
 /**
  * Sign-Up screen controller: validates fields, hashes password (PHC),
- * sends REGISTER, navigates to Chat List on success.
+ * sends REGISTER, and navigates on success.
  */
 public final class SignUpController {
 
@@ -33,9 +32,9 @@ public final class SignUpController {
     @FXML private PasswordField passwordField;
 
     @FXML private Button signUpButton;
-    @FXML private Button backButton;
     @FXML private Label statusLabel;
 
+    // Theme segmented buttons
     @FXML private Button lightBtn;
     @FXML private Button darkBtn;
 
@@ -48,11 +47,6 @@ public final class SignUpController {
     private void initialize() {
         status("");
         reflectThemeButtons(app.theme().current());
-    }
-
-    @FXML
-    private void onBackClick() {
-        nav.pop();
     }
 
     @FXML
@@ -77,7 +71,8 @@ public final class SignUpController {
             final String type = get(resp, "type");
             if ("REGISTER_OK".equals(type)) {
                 ok("Account created.");
-                nav.replace(View.CHAT_LIST);
+                // On success we move forward (e.g., to chat list). Adjust later if UX prefers returning to Login.
+                nav.replace(com.telegram.telegrampromium.nav.View.CHAT_LIST);
             } else if ("REGISTER_FAIL".equals(type)) {
                 final String reason = get(resp, "reason");
                 error(reason == null ? "Registration failed." : reason);
@@ -85,6 +80,13 @@ public final class SignUpController {
                 error("Unexpected response.");
             }
         }));
+    }
+
+    /** Hyperlink: "Already have an account?  Sign in" → back to Login. */
+    @FXML
+    private void onSignInLinkClick() {
+        // We arrived here via nav.push from Login; pop returns to Login.
+        nav.pop();
     }
 
     @FXML private void onLightClick() { applyTheme(Theme.LIGHT); }
@@ -111,7 +113,6 @@ public final class SignUpController {
 
     private void setBusy(boolean b) {
         signUpButton.setDisable(b);
-        backButton.setDisable(b);
         displayNameField.setDisable(b);
         phoneField.setDisable(b);
         usernameField.setDisable(b);

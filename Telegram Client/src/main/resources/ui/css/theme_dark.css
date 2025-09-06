@@ -1,10 +1,9 @@
-/* Dark Theme overrides */
 .root {
-    -color-bg:           #0e1518;
-    -color-surface:      #162128;
-    -color-surface-2:    #1b2a33;
-    -color-text:         #e6f2f1;
-    -color-text-muted:   #9eb5ba;
-    -color-accent:       #14c9b5;
+    -color-bg:          #0e1518; /* مکمل تیره */
+    -color-surface:     #162128;
+    -color-surface-2:   #1b2a33;
+    -color-text:        #e6f2f1;
+    -color-text-muted:  #9eb5ba;
+    -color-accent:      #14c9b5; /* فیروزه‌ای روشن */
     -color-accent-strong:#0fb6a5;
 }

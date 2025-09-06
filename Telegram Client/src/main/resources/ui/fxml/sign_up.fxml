@@ -23,7 +23,11 @@
                 <Button fx:id="signUpButton" text="Sign up" maxWidth="320"
                         onAction="#onSignUpClick" styleClass="btn-primary"/>
 
-                <Button fx:id="backButton" text="Back" onAction="#onBackClick"/>
+                <!-- Replace Back button with: "Already have an account?  Sign in" -->
+                <HBox spacing="8" alignment="CENTER">
+                    <Label text="Already have an account?"/>
+                    <Hyperlink text="Sign in" onAction="#onSignInLinkClick"/>
+                </HBox>
 
                 <Label fx:id="statusLabel" styleClass="status"/>
 
