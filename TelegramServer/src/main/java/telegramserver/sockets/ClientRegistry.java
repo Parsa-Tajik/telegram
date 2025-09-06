@@ -4,7 +4,10 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.Map;
 import java.io.BufferedWriter;
 
-// Tracks online users + their socket connections
+/**
+ * Registry of online clients and their writers (so server can push events).
+ * Keyed by username. BufferedWriter is the socket output stream writer for that user.
+ */
 public class ClientRegistry {
     private static final Map<String, BufferedWriter> clients = new ConcurrentHashMap<>();
 

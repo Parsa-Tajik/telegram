@@ -4,7 +4,9 @@ import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
 
-// Main socket server loop
+/**
+ * Accept loop: each TCP connection gets a ClientHandler thread.
+ */
 public class SocketServer {
     public static void start(int port) throws IOException {
         try (ServerSocket serverSocket = new ServerSocket(port)) {
