@@ -38,7 +38,7 @@
 
     <!-- Messages list -->
     <center>
-        <ListView fx:id="messagesList" styleClass="tgm-msg-list"/>
+        <ListView fx:id="messagesList" styleClass="tgm-msg-list" />
     </center>
 
     <!-- Composer -->
@@ -51,7 +51,7 @@
                       prefRowCount="1"
                       styleClass="tgm-input"/>
 
-            <Button fx:id="sendBtn" text="➤" disable="true" styleClass="tgm-send"/>
+            <Button fx:id="sendBtn" text="➤" disable="true" styleClass="tgm-send" onAction="#onSend"/>
         </HBox>
     </bottom>
 </BorderPane>

@@ -89,9 +89,9 @@
     -fx-background-radius: 12px;
     -fx-background-insets: 0;
 }
-.tgm-chat-screen .tgm-input:focused .content {
-    -fx-background-color: -color-surface-3;
-}
+/*.tgm-chat-screen .tgm-input:focused .content {*/
+/*    -fx-background-color: -color-surface-3;*/
+/*}*/
 
 /* ===== Send button — force accent, avoid Modena overlays ===== */
 .tgm-chat-screen .tgm-send {
@@ -141,4 +141,16 @@
     -fx-background-radius: 12px;
     -fx-padding: 4 10;
     -fx-font-weight: 800;
+}
+
+/* resources/ui/css/chat.css */
+.tgm-chat-screen .bubble-in,
+.tgm-chat-screen .bubble-out {
+    -fx-wrap-text: true;
+    /* مطمئن شو padding مناسب داری که متن نچسبه به لبه‌ها */
+    -fx-padding: 8 12 8 12;
+}
+
+.tgm-chat-screen .tgm-composer .tgm-input {
+    -fx-padding: 8 10 8 10;
 }
