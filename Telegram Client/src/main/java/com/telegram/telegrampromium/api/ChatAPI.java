@@ -11,6 +11,11 @@ import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 
+import com.google.gson.JsonElement;
+import com.telegram.telegrampromium.model.Message;
+import com.telegram.telegrampromium.model.MessageKind;
+import com.telegram.telegrampromium.model.MessageStatus;
+
 /**
  * Chat listing & actions (pin) over NDJSON.
  * Requests:
@@ -98,6 +103,114 @@ public final class ChatAPI {
             case "CHANNEL" -> com.telegram.telegrampromium.model.ChatSummary.Kind.CHANNEL;
             case "GROUP"   -> com.telegram.telegrampromium.model.ChatSummary.Kind.GROUP;
             default        -> com.telegram.telegrampromium.model.ChatSummary.Kind.PV;
+        };
+    }
+
+    public static final class HistoryPage {
+        public final java.util.List<Message> messages;
+        public final String cursorNext;
+        public final boolean hasMore;
+        public HistoryPage(java.util.List<Message> messages, String cursorNext, boolean hasMore) {
+            this.messages = messages; this.cursorNext = cursorNext; this.hasMore = hasMore;
+        }
+    }
+
+    // Send result for text message
+    public static final class SendResult {
+        public final String clientTempId;
+        public final String messageId;
+        public final long ts;
+        public SendResult(String clientTempId, String messageId, long ts) {
+            this.clientTempId = clientTempId;
+            this.messageId = messageId;
+            this.ts = ts;
+        }
+    }
+
+    /** Load chat message history (paged). */
+    public java.util.concurrent.CompletableFuture<HistoryPage> history(
+            String chatId, String cursor, int limit) {
+
+        Objects.requireNonNull(chatId, "chatId");
+        if (limit <= 0) limit = 30;
+
+        com.google.gson.JsonObject req = new com.google.gson.JsonObject();
+        req.addProperty("type", "REQ");
+        req.addProperty("cmd", "messages_history");
+        req.addProperty("id", Ids.req(chatId));
+        req.addProperty("chatId", chatId);
+        req.addProperty("limit", limit);
+        if (cursor != null && !cursor.isBlank()) req.addProperty("cursor", cursor);
+
+        return client.request(req).orTimeout(10, java.util.concurrent.TimeUnit.SECONDS)
+                .thenApply(resp -> {
+                    String status = str(resp, "status");
+                    if (!"ok".equalsIgnoreCase(status)) {
+                        throw new RuntimeException("history failed: " + resp);
+                    }
+                    java.util.List<Message> list = new java.util.ArrayList<>();
+                    com.google.gson.JsonArray arr = resp.has("messages") ? resp.getAsJsonArray("messages") : new com.google.gson.JsonArray();
+                    for (JsonElement e : arr) {
+                        if (!e.isJsonObject()) continue;
+                        com.google.gson.JsonObject m = e.getAsJsonObject();
+                        String id     = str(m, "id");
+                        String from   = str(m, "from");
+                        long   ts     = safeLong(m.get("ts"));
+                        String k      = str(m, "kind");
+                        String text   = str(m, "text");
+                        boolean outgoing = m.has("outgoing") && m.get("outgoing").getAsBoolean();
+                        MessageKind kind  = kindOrDefault(k);
+                        // status optional in history; default to SENT
+                        MessageStatus st = MessageStatus.SENT;
+                        list.add(new Message(id, chatId, from, ts, kind, text, outgoing, st));
+                    }
+                    String next = str(resp, "cursorNext");
+                    boolean hasMore = resp.has("hasMore") && resp.get("hasMore").getAsBoolean();
+                    return new HistoryPage(list, next, hasMore);
+                });
+    }
+
+    /** Send a text message to a chat. */
+    public CompletableFuture<SendResult> sendText(String chatId, String text, String clientTempId) {
+        String reqId = Ids.req("msg");
+        JsonObject req = new JsonObject();
+        req.addProperty("type", "MESSAGE_SEND");
+        req.addProperty("id", reqId);
+        req.addProperty("chat_id", chatId);
+        JsonObject msg = new JsonObject();
+        msg.addProperty("kind", "text");
+        msg.addProperty("text", text);
+        msg.addProperty("clientTempId", clientTempId);
+        req.add("msg", msg);
+        return client.request(req).thenApply(resp -> {
+            String t = str(resp, "type");
+            if (!"MESSAGE_SEND_OK".equals(t)) {
+                throw new IllegalStateException("Unexpected response type: " + t);
+            }
+            String mid = str(resp, "message_id");
+            long ts = safeLong(resp.get("ts"));
+            String echoedTemp = resp.has("clientTempId")
+                    ? resp.get("clientTempId").getAsString()
+                    : clientTempId;
+            return new SendResult(echoedTemp, mid, ts);
+        });
+    }
+
+    /** نسخهٔ قبلی برای سازگاری؛ صرفاً tempId تولید می‌کند و به اورلود جدید می‌سپارد. */
+    public CompletableFuture<SendResult> sendText(String chatId, String text) {
+        String reqId = Ids.req("msg");
+        String tmpId = "tmp-" + reqId;
+        return sendText(chatId, text, tmpId);
+    }
+    // --- small helpers at the bottom of ChatAPI (reuse style of existing code) ---
+    private static MessageKind kindOrDefault(String k) {
+        if (k == null) return MessageKind.TEXT;
+        return switch (k.toUpperCase()) {
+            case "IMAGE" -> MessageKind.IMAGE;
+            case "VIDEO" -> MessageKind.VIDEO;
+            case "AUDIO" -> MessageKind.AUDIO;
+            case "FILE"  -> MessageKind.FILE;
+            default      -> MessageKind.TEXT;
         };
     }
 }
