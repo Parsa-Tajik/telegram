@@ -45,11 +45,10 @@ public class PVService {
         } catch (SQLException ignored) {}
 
         // Insert new PV (DB)
-        int Id = (int)(Math.random()*100);
-        String ins = "INSERT INTO pv (id,user1_id, user2_id) VALUES (?, ?, ?) RETURNING id";
+        String ins = "INSERT INTO pv (user1_id, user2_id) VALUES ( ?, ?) RETURNING id";
         try (Connection conn = DriverManager.getConnection(URL, DB_USER, DB_PASS);
              PreparedStatement ps = conn.prepareStatement(ins)) {
-            ps.setInt(1,Id);ps.setInt(2, u1); ps.setInt(3, u2);
+            ps.setInt(1, u1); ps.setInt(2, u2);
             ResultSet rs = ps.executeQuery();
             if (rs.next()) {
                 int pid = rs.getInt(1);

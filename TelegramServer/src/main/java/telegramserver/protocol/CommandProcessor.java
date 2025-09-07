@@ -9,8 +9,11 @@ import telegramserver.sockets.ClientRegistry;
 
 import java.io.BufferedWriter;
 import java.io.IOException;
+import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.util.*;
+
+import static telegramserver.services.GroupService.resolveUserId;
 
 /**
  * CommandProcessor - central JSON command dispatcher (socket-based).
@@ -276,6 +279,7 @@ public class CommandProcessor {
         return SocketProtocol.buildResponse("CREATE_CHANNEL_OK", id, Map.of("channelId", channelId, "name", name));
     }
 
+
     private static String handleJoinChannel(JsonObject req, String id) {
         JsonObject payload = req.getAsJsonObject("payload");
         if (!payload.has("channelId") || !payload.has("username")) {
@@ -283,16 +287,21 @@ public class CommandProcessor {
         }
         int channelId = payload.get("channelId").getAsInt();
         String username = payload.get("username").getAsString();
+        Timestamp timestamp = new Timestamp(System.currentTimeMillis());
+
+        Integer userId = GroupService.resolveUserId(username);
+        if (userId == null) {
+            return SocketProtocol.buildResponse("JOIN_CHANNEL_FAILED", id, Map.of("message", "User not found"));
+        }
 
         try {
-            ChannelService.joinChannel(username, channelId, channelId, 0, new Timestamp(System.currentTimeMillis()), false, true);
-        } catch (Exception e) {
-            try {
-                //
-            } catch (Exception ignored) {}
-        }
+            ChannelService.joinChannel(username, userId, userId, timestamp, false, true);
+        } catch (Exception e) {}
+
         return SocketProtocol.buildResponse("JOIN_CHANNEL_OK", id, Map.of("channelId", channelId, "username", username));
     }
+
+
 
     private static String handleGetChannel(JsonObject req, String id) {
         if (!req.has("payload") || !req.getAsJsonObject("payload").has("channelId"))

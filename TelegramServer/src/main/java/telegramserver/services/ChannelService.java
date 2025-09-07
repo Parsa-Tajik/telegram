@@ -11,60 +11,50 @@ public class ChannelService {
     private static String user = "postgres";
     private static String password = "AmirMahdiImani";
 
-    public static int createChannel(String chanelname,String description,Boolean isPublic) {
-        int id = nextId++;
-
-        Map<String, Object> info = new HashMap<>();
-        info.put("id", id);
-        info.put("name", chanelname);
-        info.put("description", description);
-        info.put("isPublic", isPublic);
-
-        channels.put(id, info);
-
-        System.out.println("📢 Channel created: " + chanelname + " (id=" + id + ")");
-
-        String sql = "INSERT INTO channels (id, channel_name, description, is_public) VALUES (?, ?, ?, ?)";
+    public static int createChannel(String channelName, String description, boolean isPublic) {
+        int id = -1;
+        String sql = "INSERT INTO channels (channel_name, description, is_public) VALUES (?, ?, ?) RETURNING id";
         try (Connection conn = DriverManager.getConnection(url, user, password);
              PreparedStatement ps = conn.prepareStatement(sql)) {
-
-            ps.setInt(1, id);
-            ps.setString(2, chanelname);
-            ps.setString(3, description);
-            ps.setBoolean(4, isPublic);
-            ps.executeUpdate();
-
-        }
-        catch (SQLException e) {
+            ps.setString(1, channelName);
+            ps.setString(2, description);
+            ps.setBoolean(3, isPublic);
+            ResultSet rs = ps.executeQuery();
+            if (rs.next()) {
+                id = rs.getInt("id");
+            }
+            Map<String, Object> info = new HashMap<>();
+            info.put("id", id);
+            info.put("name", channelName);
+            info.put("description", description);
+            info.put("isPublic", isPublic);
+            channels.put(id, info);
+            System.out.println("📢 Channel created: " + channelName + " (id=" + id + ")");
+        } catch (SQLException e) {
             e.printStackTrace();
         }
-        // 👉 DB Team: INSERT INTO channels (id, name, ownerId) VALUES (...)
-        //finish
-
         return id;
     }
 
-    public static void joinChannel(String username,int id, int channelId,int Userid,Timestamp joinedat,Boolean isadmin,Boolean isPublic) {
+
+    public static void joinChannel(String username, int channelId, int userId, Timestamp joinedAt, boolean isAdmin, boolean isAccepted) {
         channelMembers.putIfAbsent(channelId, new HashSet<>());
         channelMembers.get(channelId).add(username);
 
-        String sql = "INSERT INTO channel_members (id,channel_id,user_id,joined_at,is_admin,is_accepted) VALUES (?, ?,?,?,?,?)";
+        String sql = "INSERT INTO channel_members (channel_id, user_id, joined_at, is_admin, is_accepted) VALUES (?, ?, ?, ?, ?)";
         try (Connection conn = DriverManager.getConnection(url, user, password);
              PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setInt(1, id);
-            ps.setInt(2, channelId);
-            ps.setInt(3, Userid);
-            ps.setTimestamp(4, joinedat);
-            ps.setBoolean(5, isadmin);
-            ps.setBoolean(6, isPublic);
+            ps.setInt(1, channelId);
+            ps.setInt(2, userId);
+            ps.setTimestamp(3, joinedAt);
+            ps.setBoolean(4, isAdmin);
+            ps.setBoolean(5, isAccepted);
             ps.executeUpdate();
-        }
-        catch (SQLException e) {
+        } catch (SQLException e) {
             e.printStackTrace();
         }
-        // 👉 DB Team: INSERT INTO channel_members (channelId, username)
-        //finish
     }
+
 
     public static Set<String> getMembers(int channelId) throws SQLException {
         String sql = "SELECT user_id FROM channel_members WHERE channel_id=?";
@@ -89,7 +79,7 @@ public class ChannelService {
     }
 
     public static Map<String, Object> getChannelInfo(int channelId) throws SQLException {
-        String sql = "SELECT id, name, description FROM channels WHERE id=?";
+        String sql = "SELECT id, channel_name, description FROM channels WHERE id=?";
         Map<String, Object> channelInfo = null;
 
         try (Connection conn = DriverManager.getConnection(url, user, password);
@@ -100,7 +90,7 @@ public class ChannelService {
                 if (rs.next()) {
                     channelInfo = new HashMap<>();
                     channelInfo.put("id", rs.getInt("id"));
-                    channelInfo.put("name", rs.getString("name"));
+                    channelInfo.put("name", rs.getString("channel_name"));
                     channelInfo.put("description", rs.getString("description"));
                 }
             }

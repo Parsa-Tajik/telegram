@@ -83,6 +83,7 @@ public class GroupService {
         }
     }
 
+
     public static boolean leaveGroup(int groupId, String username) {
         Integer uid = resolveUserId(username);
         if (uid != null) {
@@ -142,7 +143,7 @@ public class GroupService {
         return groupChatMap.get(groupId);
     }
 
-    private static Integer resolveUserId(String username) {
+    public static Integer resolveUserId(String username) {
         String sql = "SELECT id FROM users WHERE username = ?";
         try (Connection conn = DriverManager.getConnection(URL, DB_USER, DB_PASS);
              PreparedStatement ps = conn.prepareStatement(sql)) {
