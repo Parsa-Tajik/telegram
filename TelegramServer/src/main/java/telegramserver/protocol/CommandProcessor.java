@@ -2,6 +2,7 @@ package telegramserver.protocol;
 
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
+import com.google.gson.reflect.TypeToken;
 import telegramserver.models.Message;
 import telegramserver.services.*;
 import telegramserver.sockets.ClientRegistry;
@@ -114,17 +115,18 @@ public class CommandProcessor {
 
     private static String handleRegister(JsonObject req, String id) {
         try {
-            JsonObject payload = req.getAsJsonObject("payload");
-            Map<String, String> map = new HashMap<>();
-            payload.entrySet().forEach(e -> map.put(e.getKey(), e.getValue().getAsString()));
+            JsonObject payload = req.has("payload") ? req.getAsJsonObject("payload") : new JsonObject();
+            UserService.RegisterRequest registerReq = gson.fromJson(payload, UserService.RegisterRequest.class);
 
-            String resJson = UserService.registerUser(map);
-            Map<?, ?> parsed = gson.fromJson(resJson, Map.class);
+            String resJson = UserService.registerUser(registerReq);
+
+            Map<String, Object> parsed = gson.fromJson(resJson, new TypeToken<Map<String, Object>>() {}.getType());
             String status = (String) parsed.getOrDefault("status", "error");
+
             if ("success".equalsIgnoreCase(status)) {
-                return SocketProtocol.buildResponse("REGISTER_OK", id, Map.of("message", parsed.get("message")));
+                return SocketProtocol.buildResponse("REGISTER_OK", id, parsed);
             } else {
-                return SocketProtocol.buildResponse("REGISTER_FAIL", id, Map.of("message", parsed.get("message")));
+                return SocketProtocol.buildResponse("REGISTER_FAIL", id, parsed);
             }
         } catch (Exception e) {
             return SocketProtocol.buildResponse("REGISTER_FAIL", id, Map.of("message", e.getMessage()));
@@ -133,23 +135,30 @@ public class CommandProcessor {
 
     private static String handleLogin(JsonObject req, String id) {
         try {
-            JsonObject payload = req.getAsJsonObject("payload");
-            Map<String, String> map = new HashMap<>();
-            payload.entrySet().forEach(e -> map.put(e.getKey(), e.getValue().getAsString()));
+            JsonObject payload = req.has("payload") ? req.getAsJsonObject("payload") : new JsonObject();
+            UserService.LoginRequest loginReq = gson.fromJson(payload, UserService.LoginRequest.class);
 
-            String resJson = UserService.loginUser(map);
-            Map<?, ?> parsed = gson.fromJson(resJson, Map.class);
+            String resJson = UserService.loginUser(loginReq);
+
+            Map<String, Object> parsed = gson.fromJson(resJson, new TypeToken<Map<String, Object>>() {}.getType());
             String status = (String) parsed.getOrDefault("status", "error");
+
             if ("success".equalsIgnoreCase(status)) {
-                String username = map.get("username");
-                return SocketProtocol.buildResponse("LOGIN_OK", id, Map.of("username", username, "message", parsed.get("message")));
+                return SocketProtocol.buildResponse("LOGIN_OK", id, Map.of(
+                        "username", loginReq.username,
+                        "message", parsed.get("message")
+                ));
             } else {
-                return SocketProtocol.buildResponse("LOGIN_FAIL", id, Map.of("message", parsed.get("message")));
+                return SocketProtocol.buildResponse("LOGIN_FAIL", id, Map.of(
+                        "message", parsed.get("message")
+                ));
             }
         } catch (Exception e) {
             return SocketProtocol.buildResponse("LOGIN_FAIL", id, Map.of("message", e.getMessage()));
         }
     }
+
+
 
     private static String handleGetHome(JsonObject req, String id, String username) {
         // Provide aggregated info for homepage — placeholders for now
@@ -279,8 +288,7 @@ public class CommandProcessor {
             ChannelService.joinChannel(username, channelId, channelId, 0, new Timestamp(System.currentTimeMillis()), false, true);
         } catch (Exception e) {
             try {
-                // fallback to older/simple signature if one exists (some code versions)
-                ChannelService.joinChannel(channelId, username);
+                //
             } catch (Exception ignored) {}
         }
         return SocketProtocol.buildResponse("JOIN_CHANNEL_OK", id, Map.of("channelId", channelId, "username", username));
