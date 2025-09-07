@@ -10,11 +10,12 @@ import java.util.Map;
 import java.util.UUID;
 
 public class UserService {
+
     private static final Gson gson = new Gson();
-    private static final String url = "jdbc:postgresql://localhost:5432/Telegram";
+    private static final Map<String, User> users = new HashMap<>();
+    private static final String DB_URL = "jdbc:postgresql://localhost:5432/Telegram";
     private static final String DB_USER = "postgres";
     private static final String DB_PASSWORD = "AmirMahdiImani";
-    private static final Map<String, User> users = new HashMap<>();
 
     public static class RegisterRequest {
         String username;
@@ -52,11 +53,10 @@ public class UserService {
         }
 
         Timestamp now = new Timestamp(System.currentTimeMillis());
-        UUID uuid = UUID.randomUUID();
         String hashedPassword = hashPassword(req.password);
 
         User user = new User(
-                uuid.hashCode(),
+                Math.abs(UUID.randomUUID().hashCode()),
                 req.firstName,
                 req.secondName,
                 req.bio,
@@ -70,26 +70,7 @@ public class UserService {
         );
 
         users.put(req.username, user);
-
-        try (Connection conn = DriverManager.getConnection(url, DB_USER, DB_PASSWORD)) {
-            String insertQuery = "INSERT INTO users (id, first_name, second_name, bio, phone_number, username, password, created_at, is_online, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
-            try (PreparedStatement ps = conn.prepareStatement(insertQuery)) {
-                ps.setInt(1, user.getId());
-                ps.setString(2, user.getFirstName());
-                ps.setString(3, user.getSecondName());
-                ps.setString(4, user.getBio());
-                ps.setString(5, user.getPhoneNumber());
-                ps.setString(6, user.getUsername());
-                ps.setString(7, user.getPassword());
-                ps.setTimestamp(8, now);
-                ps.setBoolean(9, false);
-                ps.setTimestamp(10, now);
-                ps.executeUpdate();
-            }
-        } catch (SQLException e) {
-            e.printStackTrace();
-            return gson.toJson(Map.of("status", "error", "message", "Database error"));
-        }
+        user.adduser();
 
         return gson.toJson(Map.of("status", "success", "message", "User registered"));
     }
@@ -99,36 +80,52 @@ public class UserService {
             return gson.toJson(Map.of("status", "error", "message", "Invalid payload"));
         }
 
-        String query = "SELECT password FROM users WHERE username = ?";
-        try (Connection conn = DriverManager.getConnection(url, DB_USER, DB_PASSWORD);
-             PreparedStatement ps = conn.prepareStatement(query)) {
+        User user = users.get(req.username);
 
-            ps.setString(1, req.username);
-            ResultSet rs = ps.executeQuery();
-
-            if (!rs.next()) {
-                return gson.toJson(Map.of("status", "error", "message", "User not found"));
+        if (user == null) {
+            try (Connection conn = DriverManager.getConnection(DB_URL, DB_USER, DB_PASSWORD)) {
+                String query = "SELECT * FROM users WHERE username = ?";
+                try (PreparedStatement ps = conn.prepareStatement(query)) {
+                    ps.setString(1, req.username);
+                    ResultSet rs = ps.executeQuery();
+                    if (!rs.next()) {
+                        return gson.toJson(Map.of("status", "error", "message", "User not found"));
+                    }
+                    user = new User(
+                            rs.getInt("id"),
+                            rs.getString("first_name"),
+                            rs.getString("second_name"),
+                            rs.getString("bio"),
+                            rs.getString("phone_number"),
+                            rs.getString("username"),
+                            null,
+                            rs.getTimestamp("created_at"),
+                            rs.getBoolean("is_online"),
+                            rs.getTimestamp("updated_at"),
+                            rs.getString("password")
+                    );
+                    users.put(req.username, user);
+                }
+            } catch (SQLException e) {
+                e.printStackTrace();
+                return gson.toJson(Map.of("status", "error", "message", "Database error: " + e.getMessage()));
             }
-
-            String storedHash = rs.getString("password");
-            String inputHash = hashPassword(req.password);
-
-            if (!storedHash.equals(inputHash)) {
-                return gson.toJson(Map.of("status", "error", "message", "Invalid password"));
-            }
-
-            String updateQuery = "UPDATE users SET is_online = ? WHERE username = ?";
-            try (PreparedStatement updatePs = conn.prepareStatement(updateQuery)) {
-                updatePs.setBoolean(1, true);
-                updatePs.setString(2, req.username);
-                updatePs.executeUpdate();
-            }
-
-            return gson.toJson(Map.of("status", "success", "message", "Login successful"));
-
-        } catch (SQLException e) {
-            e.printStackTrace();
-            return gson.toJson(Map.of("status", "error", "message", "Database error"));
         }
+
+        String inputHash = hashPassword(req.password);
+        if (!inputHash.equals(user.getPassword())) {
+            return gson.toJson(Map.of("status", "error", "message", "Invalid password"));
+        }
+
+        try (Connection conn = DriverManager.getConnection(DB_URL, DB_USER, DB_PASSWORD)) {
+            String updateQuery = "UPDATE users SET is_online = ? WHERE username = ?";
+            try (PreparedStatement ps = conn.prepareStatement(updateQuery)) {
+                ps.setBoolean(1, true);
+                ps.setString(2, req.username);
+                ps.executeUpdate();
+            }
+        } catch (SQLException ignored) {}
+
+        return gson.toJson(Map.of("status", "success", "message", "Login successful"));
     }
 }
