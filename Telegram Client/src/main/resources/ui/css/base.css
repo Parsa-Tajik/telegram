@@ -92,3 +92,95 @@
 
 .badge { -fx-background-color: -color-accent; -fx-background-radius: 10px; -fx-padding: 2 6; -fx-alignment: center; }
 .badge-text { -fx-text-fill: white; -fx-font-size: 11px; -fx-font-weight: 800; }
+
+/* Pin icon near title */
+.pin-icon {
+    -fx-text-fill: -color-accent;
+    -fx-font-size: 12px;
+    -fx-opacity: 0.9;
+}
+
+/* ===== Context Menu (right-click) ===== */
+.context-menu {
+    -fx-background-color: -color-surface;
+    -fx-background-radius: 12px;
+    -fx-border-color: -color-divider;
+    -fx-border-radius: 12px;
+    -fx-padding: 6px;
+    -fx-effect: dropshadow(gaussian, -shadow-color, 16, 0.25, 0, 4);
+}
+
+.context-menu .label {
+    -fx-text-fill: -color-text;
+    -fx-font-weight: 600;
+    -fx-padding: 6 10;
+}
+
+.menu-item {
+    -fx-background-radius: 8px;
+}
+.menu-item:focused {
+    -fx-background-color: -hover-tint;
+    -fx-background-radius: 8px;
+}
+.menu-item:disabled .label {
+    -fx-opacity: 0.5;
+}
+
+/* ===== Chat header ===== */
+.chat-header {
+    -fx-background-color: -color-surface;
+    -fx-background-radius: 0 0 16px 16px;
+    -fx-effect: dropshadow(gaussian, -shadow-color, 12, 0.2, 0, 2);
+}
+
+/* ===== Messages list (base) ===== */
+.list-view {
+    -fx-background-color: transparent;
+    -fx-control-inner-background: transparent;
+    -fx-background-insets: 0;
+}
+
+/* ===== Composer ===== */
+.composer {
+    -fx-background-color: -color-surface;
+    -fx-background-radius: 16px 16px 0 0;
+    -fx-spacing: 10;
+}
+.composer .text-area {
+    -fx-background-color: -color-surface-2;
+    -fx-background-radius: 12px;
+    -fx-text-fill: -color-text;
+    -fx-prompt-text-fill: -color-text-muted;
+    -fx-padding: 8 10;
+}
+
+/* ===== Message bubbles (placeholders for 4.2) ===== */
+.bubble-in {
+    -fx-background-color: -color-surface-2;
+    -fx-background-radius: 14px 14px 14px 4px;
+    -fx-padding: 8 10;
+}
+.bubble-out {
+    -fx-background-color: -color-accent;
+    -fx-background-radius: 14px 14px 4px 14px;
+    -fx-padding: 8 10;
+    -fx-text-fill: white;
+}
+.date-sep {
+    -fx-background-color: -hover-tint;
+    -fx-background-radius: 12px;
+    -fx-padding: 3 10;
+    -fx-text-fill: -color-text-muted;
+    -fx-font-weight: 700;
+    -fx-alignment: center;
+}
+
+/* New-message chip (next stage uses it) */
+.chip-new {
+    -fx-background-color: -color-accent;
+    -fx-text-fill: white;
+    -fx-background-radius: 12px;
+    -fx-padding: 4 10;
+    -fx-font-weight: 800;
+}

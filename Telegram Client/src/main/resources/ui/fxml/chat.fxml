@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.shape.Circle?>
+
+<?import java.net.URL?>
+<BorderPane xmlns="http://javafx.com/javafx/17" xmlns:fx="http://javafx.com/fxml/1"
+            fx:controller="com.telegram.telegrampromium.controller.ChatController"
+            styleClass="tgm-chat-screen">
+    <stylesheets>
+        <URL value="@../css/chat.css"/>
+    </stylesheets>
+
+    <!-- Header -->
+    <top>
+        <HBox spacing="12" alignment="CENTER_LEFT" BorderPane.alignment="CENTER"
+              styleClass="tgm-header">
+            <padding><Insets top="10" right="12" bottom="10" left="12"/></padding>
+
+            <Button fx:id="backBtn" text="←" styleClass="tgm-back"/>
+            <StackPane fx:id="headerAvatar" prefWidth="36" prefHeight="36"
+                       styleClass="tgm-avatar">
+                <Circle radius="18"/>
+            </StackPane>
+
+            <VBox spacing="2">
+                <Label fx:id="headerTitle" styleClass="tgm-title"/>
+                <Label fx:id="headerSubtitle" styleClass="tgm-subtitle" text="last seen recently"/>
+            </VBox>
+
+            <Pane HBox.hgrow="ALWAYS"/>
+            <!-- icon-only search -->
+            <Button fx:id="searchBtn" text="🔍" styleClass="tgm-search"/>
+        </HBox>
+    </top>
+
+    <!-- Messages list -->
+    <center>
+        <ListView fx:id="messagesList" styleClass="tgm-msg-list"/>
+    </center>
+
+    <!-- Composer -->
+    <bottom>
+        <HBox spacing="10" alignment="CENTER_LEFT" styleClass="tgm-composer">
+            <padding><Insets top="10" right="12" bottom="12" left="12"/></padding>
+
+            <TextArea fx:id="messageInput"
+                      promptText="Write a message..."
+                      prefRowCount="1"
+                      styleClass="tgm-input"/>
+
+            <Button fx:id="sendBtn" text="➤" disable="true" styleClass="tgm-send"/>
+        </HBox>
+    </bottom>
+</BorderPane>

@@ -12,9 +12,10 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 
 /**
- * Chat listing API over NDJSON.
- * Request:  {type:"CHAT_LIST", id, cursor?, limit?}
- * Response: {type:"CHAT_LIST_OK", id, items:[...], next_cursor?, has_more?, total_unread?}
+ * Chat listing & actions (pin) over NDJSON.
+ * Requests:
+ *  - CHAT_LIST  {id, cursor?, limit?}
+ *  - CHAT_PIN   {id, chatId, pinned}
  */
 public final class ChatAPI {
 
@@ -41,7 +42,6 @@ public final class ChatAPI {
                 .thenApply(resp -> {
                     String type = str(resp, "type");
                     if (!"CHAT_LIST_OK".equals(type)) {
-                        // Gracefully handle minimal test server that replies "<TYPE>_OK" without body.
                         return new PageResult(List.of(), null, false, 0);
                     }
                     List<com.telegram.telegrampromium.model.ChatSummary> list = new ArrayList<>();
@@ -58,8 +58,9 @@ public final class ChatAPI {
                         long ts = c.has("last_ts") ? safeLong(c.get("last_ts")) : 0L;
                         int unread = c.has("unread") ? c.get("unread").getAsInt() : 0;
                         boolean muted = c.has("muted") && c.get("muted").getAsBoolean();
+                        boolean pinned = c.has("pinned") && c.get("pinned").getAsBoolean();
                         list.add(new com.telegram.telegrampromium.model.ChatSummary(
-                                id, kind, title, preview, ts, unread, muted
+                                id, kind, title, preview, ts, unread, muted, pinned
                         ));
                     }
 
@@ -71,14 +72,26 @@ public final class ChatAPI {
                 });
     }
 
+    /** Toggle pin status on a chat. Returns true on CHAT_PIN_OK. */
+    public CompletableFuture<Boolean> setPinned(String chatId, boolean pinned) {
+        JsonObject req = new JsonObject();
+        req.addProperty("type", "CHAT_PIN");
+        req.addProperty("id",   Ids.req("pin"));
+        req.addProperty("chatId", chatId);
+        req.addProperty("pinned", pinned);
+
+        return client.request(req)
+                .orTimeout(10, TimeUnit.SECONDS)
+                .thenApply(resp -> "CHAT_PIN_OK".equals(str(resp, "type")));
+    }
+
+    /* helpers */
     private static String str(JsonObject o, String k) {
         return (o != null && o.has(k) && !o.get(k).isJsonNull()) ? o.get(k).getAsString() : null;
     }
-
     private static long safeLong(com.google.gson.JsonElement e) {
         try { return e.getAsLong(); } catch (Exception ignore) { return 0L; }
     }
-
     private static com.telegram.telegrampromium.model.ChatSummary.Kind parseKind(String k) {
         if (k == null) return com.telegram.telegrampromium.model.ChatSummary.Kind.PV;
         return switch (k.toUpperCase()) {
