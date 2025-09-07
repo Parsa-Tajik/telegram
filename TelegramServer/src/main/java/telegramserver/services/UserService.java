@@ -99,9 +99,9 @@ public class UserService {
                             rs.getString("phone_number"),
                             rs.getString("username"),
                             null,
-                            rs.getTimestamp("created_at"),
+                            rs.getTimestamp("last_seen"),
                             rs.getBoolean("is_online"),
-                            rs.getTimestamp("updated_at"),
+                            rs.getTimestamp("registered_at"),
                             rs.getString("password")
                     );
                     users.put(req.username, user);
