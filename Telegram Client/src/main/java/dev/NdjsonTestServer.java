@@ -277,6 +277,169 @@ public final class NdjsonTestServer {
                         r.addProperty("pinned", req.get("pinned").getAsBoolean());
                         yield r;
                     }
+                    case "CHAT_READ" -> {
+                        JsonObject r = base(id, "CHAT_READ_OK");
+                        String chatId = str(req, "chatId");
+                        String upto   = str(req, "upto");
+                        long now = System.currentTimeMillis();
+                        r.addProperty("server_time", now);
+                        r.addProperty("chatId", chatId);
+                        if (upto != null) r.addProperty("upto", upto);
+                        // ایونت وضعیت برای همه (کلاینت‌ها خودشان فیلتر می‌کنند)
+                        JsonObject ev = new JsonObject();
+                        ev.addProperty("type", "EVENT");
+                        ev.addProperty("event", "message_status");
+                        if (chatId != null) ev.addProperty("chatId", chatId);
+                        if (upto != null) ev.addProperty("messageId", upto);
+                        ev.addProperty("status", "READ");
+                        ev.addProperty("ts", now);
+                        broadcast(ev);
+                        yield r;
+                    }
+                    case "message_send" -> {
+                        JsonObject r = base(id, "MESSAGE_SEND_OK");
+                        r.addProperty("status", "ok");
+                        r.addProperty("messageId", "srv-" + java.util.UUID.randomUUID());
+                        r.addProperty("ts", System.currentTimeMillis());
+                        yield r;
+                    }
+                    case "messages_delete" -> {
+                        JsonObject r = base(id, "MESSAGE_DELETE_OK");
+                        r.addProperty("status", "ok");
+                        String scope = str(req, "for"); // "me" | "all"
+                        if ("all".equalsIgnoreCase(scope)) {
+                            JsonObject ev = new JsonObject();
+                            ev.addProperty("type", "EVENT");
+                            ev.addProperty("event", "message_deleted");
+                            ev.addProperty("chatId", str(req, "chatId"));
+                            ev.addProperty("messageId", str(req, "messageId"));
+                            ev.addProperty("scope", "all");
+                            ev.addProperty("ts", System.currentTimeMillis());
+                            broadcast(ev);
+                        }
+                        yield r;
+                    }
+                    case "contacts_add" -> {
+                        String phone = req.getAsJsonObject("contact").get("phone").getAsString();
+                        JsonObject r = base(id, "CONTACTS_ADD_OK");
+                        // سه سناریو
+                        if (phone.equals("+989000000000")) {
+                            JsonObject e = base(id, "ERROR");
+                            e.addProperty("code", "PHONE_NOT_REGISTERED");
+                            e.addProperty("message", "Phone not registered");
+                            yield e;
+                        } else if (phone.equals("+989111111111")) {
+                            JsonObject e = base(id, "ERROR");
+                            e.addProperty("code", "CONTACT_ALREADY_EXISTS");
+                            e.addProperty("userId", "u_42");
+                            e.addProperty("message", "Already exists");
+                            yield e;
+                        } else {
+                            r.addProperty("userId", "u_" + Math.abs(phone.hashCode()));
+                            yield r;
+                        }
+                    }
+                    case "REQ" -> {
+                        String cmd = str(req, "cmd");
+                        // همون منطق کیس‌های موجود رو برای حالت REQ بازپخش می‌کنیم
+                        yield switch (cmd) {
+                            case "message_send" -> {
+                                JsonObject r = base(id, "MESSAGE_SEND_OK");
+                                r.addProperty("status", "ok");
+                                r.addProperty("messageId", "srv-" + java.util.UUID.randomUUID());
+                                r.addProperty("ts", System.currentTimeMillis());
+                                yield r;
+                            }
+                            case "messages_delete" -> {
+                                JsonObject r = base(id, "MESSAGE_DELETE_OK");
+                                r.addProperty("status", "ok");
+                                String scope = str(req, "for"); // "me" | "all"
+                                if ("all".equalsIgnoreCase(scope)) {
+                                    JsonObject ev = new JsonObject();
+                                    ev.addProperty("type", "EVENT");
+                                    ev.addProperty("event", "message_deleted");
+                                    ev.addProperty("chatId", str(req, "chatId"));
+                                    ev.addProperty("messageId", str(req, "messageId"));
+                                    ev.addProperty("scope", "all");
+                                    ev.addProperty("ts", System.currentTimeMillis());
+                                    broadcast(ev);
+                                }
+                                yield r;
+                            }
+                            case "CHAT_READ" -> {
+                                JsonObject r = base(id, "CHAT_READ_OK");
+                                String chatId = str(req, "chatId");
+                                String upto   = str(req, "upto");
+                                long now = System.currentTimeMillis();
+                                r.addProperty("server_time", now);
+                                r.addProperty("chatId", chatId);
+                                if (upto != null) r.addProperty("upto", upto);
+                                JsonObject ev = new JsonObject();
+                                ev.addProperty("type", "EVENT");
+                                ev.addProperty("event", "message_status");
+                                if (chatId != null) ev.addProperty("chatId", chatId);
+                                if (upto != null) ev.addProperty("messageId", upto);
+                                ev.addProperty("status", "READ");
+                                ev.addProperty("ts", now);
+                                broadcast(ev);
+                                yield r;
+                            }
+                            case "CHAT_PIN" -> {
+                                JsonObject r = base(id, "CHAT_PIN_OK");
+                                r.addProperty("chatId", str(req, "chatId"));
+                                r.addProperty("pinned", req.get("pinned").getAsBoolean());
+                                yield r;
+                            }
+                            case "contacts_add" -> {
+                                String phone = req.getAsJsonObject("contact").get("phone").getAsString();
+                                // سه سناریو دقیقاً مطابق کیس نوع-مستقیم
+                                if (phone.equals("+989000000000")) {
+                                    JsonObject e = base(id, "ERROR");
+                                    e.addProperty("code", "PHONE_NOT_REGISTERED");
+                                    e.addProperty("message", "Phone not registered");
+                                    yield e;
+                                } else if (phone.equals("+989111111111")) {
+                                    JsonObject e = base(id, "ERROR");
+                                    e.addProperty("code", "CONTACT_ALREADY_EXISTS");
+                                    e.addProperty("userId", "u_42");
+                                    e.addProperty("message", "Already exists");
+                                    yield e;
+                                } else {
+                                    JsonObject r = base(id, "CONTACTS_ADD_OK");
+                                    r.addProperty("userId", "u_" + Math.abs(phone.hashCode()));
+                                    yield r;
+                                }
+                            }
+                            case "contacts_list" -> {
+                                JsonObject r = base(id, "CONTACTS_LIST_OK");
+                                com.google.gson.JsonArray arr = new com.google.gson.JsonArray();
+
+                                java.util.function.BiConsumer<String,String> add = (uid, name) -> {
+                                    JsonObject c = new JsonObject();
+                                    c.addProperty("userId", uid);
+                                    c.addProperty("displayName", name);
+                                    c.addProperty("username", name.toLowerCase());
+                                    c.addProperty("avatarUrl", ""); // فعلاً خالی
+                                    long ls = System.currentTimeMillis() - (long)(Math.random()*86_400_000L);
+                                    c.addProperty("lastSeen", ls);
+                                    c.addProperty("lastSeen_text", "لحظاتی پیش");
+                                    arr.add(c);
+                                };
+
+                                add.accept("u_alice","Alice");
+                                add.accept("u_bob","Bob");
+                                add.accept("u_charlie","Charlie");
+
+                                r.add("contacts", arr);
+                                yield r;
+                            }
+                            default -> {
+                                JsonObject r = base(id, "REQ_OK");
+                                r.addProperty("server_time", System.currentTimeMillis());
+                                yield r;
+                            }
+                        };
+                    }
                     default -> {
                         // Generic acknowledge for unknown test commands
                         JsonObject r = base(id, type + "_OK");

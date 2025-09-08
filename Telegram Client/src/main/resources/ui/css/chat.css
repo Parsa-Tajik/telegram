@@ -154,3 +154,43 @@
 .tgm-chat-screen .tgm-composer .tgm-input {
     -fx-padding: 8 10 8 10;
 }
+
+/* چیپ «N پیام جدید» */
+.chip-new {
+    -fx-background-color: -color-accent;
+    -fx-text-fill: white;
+    -fx-background-radius: 999;
+    -fx-padding: 6 12 6 12;
+    -fx-cursor: hand;
+    -fx-font-weight: 600;
+    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.25), 8, 0, 0, 2);
+}
+
+/* + Reply preview bar */
+.reply-bar {
+    -fx-background-color: -color-bg-elev-1;
+    -fx-background-radius: 8;
+    -fx-padding: 6 8 6 8;
+    -fx-border-color: -color-border-mild;
+    -fx-border-radius: 8;
+}
+.reply-bar .reply-title {
+    -fx-font-weight: bold;
+}
+.reply-bar .reply-snippet {
+    -fx-opacity: 0.85;
+}
+/* ===== Reply preview (composer) ===== */
+.reply-preview {
+    -fx-background-color: -color-surface-2;
+    -fx-background-radius: 10px;
+    -fx-padding: 6 8;
+    -fx-alignment: center-left;
+}
+.reply-title {
+    -fx-text-fill: -color-accent;
+    -fx-font-weight: 800;
+}
+.reply-snippet {
+    -fx-text-fill: -color-text-muted;
+}

@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import javafx.scene.layout.*?>
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.text.*?>
+
+<?import java.net.URL?>
+<BorderPane xmlns="http://javafx.com/javafx" xmlns:fx="http://javafx.com/fxml"
+            fx:controller="com.telegram.telegrampromium.controller.NewChatController"
+            styleClass="tgm-page">
+    <stylesheets>
+        <URL value="@../css/new_chat.css"/>
+    </stylesheets>
+
+    <!-- Header ساده -->
+    <top>
+        <HBox spacing="12" styleClass="nc-header">
+            <padding><Insets top="12" right="12" bottom="12" left="12"/></padding>
+            <Button text="←" onAction="#onBack" styleClass="btn-ghost"/>
+            <Label text="شروع گفتگو" styleClass="nc-title"/>
+        </HBox>
+    </top>
+
+    <!-- اکشن‌های بالا -->
+    <center>
+        <VBox spacing="16">
+            <padding><Insets top="8" right="12" bottom="12" left="12"/></padding>
+
+            <HBox spacing="12">
+                <Button text="➕ افزودن مخاطب" onAction="#onAddContact" styleClass="nc-action"/>
+                <Button text="👥 ساخت گروه" onAction="#onCreateGroup" styleClass="nc-action"/>
+                <Button text="📣 ساخت کانال" onAction="#onCreateChannel" styleClass="nc-action"/>
+            </HBox>
+
+            <Label text="مخاطبین" styleClass="nc-section"/>
+            <ListView fx:id="contactsList" styleClass="nc-list"/>
+        </VBox>
+    </center>
+</BorderPane>

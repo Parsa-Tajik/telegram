@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import javafx.scene.layout.*?>
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.text.*?>
+
+<?import java.net.URL?>
+<VBox xmlns="http://javafx.com/javafx" xmlns:fx="http://javafx.com/fxml"
+      fx:controller="com.telegram.telegrampromium.controller.ProfileController"
+      spacing="12"
+      styleClass="tgm-page">
+    <stylesheets><URL value="@../css/profile.css"/></stylesheets>
+    <padding><Insets top="16" right="16" bottom="16" left="16"/></padding>
+
+    <HBox spacing="8">
+        <Button text="←" onAction="#onBack" styleClass="btn-ghost"/>
+        <Label text="پروفایل کاربر" styleClass="nc-title"/>
+    </HBox>
+
+    <HBox spacing="16" alignment="CENTER_LEFT">
+        <Label fx:id="avatar" text="A" styleClass="avatar-lg"/>
+        <VBox spacing="4">
+            <Label fx:id="displayName" text="Alice" styleClass="name-lg"/>
+            <Label fx:id="username" text="@alice" styleClass="muted"/>
+            <Label fx:id="lastSeen" text="لحظاتی پیش" styleClass="muted"/>
+        </VBox>
+    </HBox>
+
+    <HBox spacing="10">
+        <Button text="پیام" onAction="#onMessage" styleClass="nc-action"/>
+        <Button text="افزودن به مخاطبین" onAction="#onAdd" styleClass="nc-action"/>
+    </HBox>
+</VBox>

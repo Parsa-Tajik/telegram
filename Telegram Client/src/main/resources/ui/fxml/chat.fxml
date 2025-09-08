@@ -38,7 +38,19 @@
 
     <!-- Messages list -->
     <center>
-        <ListView fx:id="messagesList" styleClass="tgm-msg-list" />
+        <StackPane>
+            <ListView fx:id="messagesList" styleClass="tgm-msg-list"/>
+            <Label fx:id="newChip" styleClass="chip-new label"
+                   text="1 پیام جدید"
+                   visible="false" managed="false"
+                   onMouseClicked="#onNewChipClick"
+                   StackPane.alignment="BOTTOM_CENTER">
+                <StackPane.margin>
+                    <!-- فاصله از پایین تا بالای کامپوزر؛ اگر کامپوزرت ارتفاع ثابت مثلاً ~56px دارد -->
+                    <Insets top="0" right="0" bottom="64" left="0"/>
+                </StackPane.margin>
+            </Label>
+        </StackPane>
     </center>
 
     <!-- Composer -->
@@ -46,12 +58,23 @@
         <HBox spacing="10" alignment="CENTER_LEFT" styleClass="tgm-composer">
             <padding><Insets top="10" right="12" bottom="12" left="12"/></padding>
 
-            <TextArea fx:id="messageInput"
-                      promptText="Write a message..."
-                      prefRowCount="1"
-                      styleClass="tgm-input"/>
+            <!-- Stack برای reply-preview + textarea -->
+            <VBox spacing="6" HBox.hgrow="ALWAYS">
+                <!-- ریپلای‌پریویو: پیش‌فرض مخفی -->
+                <HBox fx:id="replyBox" spacing="8" visible="false" managed="false" styleClass="reply-preview">
+                    <Label fx:id="replyTitle" styleClass="reply-title" text=""/>
+                    <Label fx:id="replySnippet" styleClass="reply-snippet" text=""/>
+                    <Pane HBox.hgrow="ALWAYS"/>
+                    <Button fx:id="replyClose" text="✕" styleClass="btn-ghost"/>
+                </HBox>
 
-            <Button fx:id="sendBtn" text="➤" disable="true" styleClass="tgm-send" onAction="#onSend"/>
+                <TextArea fx:id="messageInput"
+                          promptText="Write a message..."
+                          prefRowCount="1"
+                          styleClass="tgm-input"/>
+            </VBox>
+
+            <Button fx:id="sendBtn" text="➤" disable="true" styleClass="tgm-send"/>
         </HBox>
     </bottom>
 </BorderPane>
