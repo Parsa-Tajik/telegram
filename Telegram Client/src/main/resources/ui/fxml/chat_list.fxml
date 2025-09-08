@@ -6,7 +6,8 @@
 
 <BorderPane xmlns="http://javafx.com/javafx/17" xmlns:fx="http://javafx.com/fxml/1"
             fx:controller="com.telegram.telegrampromium.controller.ChatListController"
-            styleClass="screen">
+            styleClass="screen"
+            fx:id="root">
 
     <top>
         <HBox spacing="12" alignment="CENTER_LEFT" BorderPane.alignment="CENTER">
@@ -16,7 +17,19 @@
     </top>
 
     <center>
-        <ListView fx:id="list"/>
+        <StackPane>
+            <ListView fx:id="list"/>
+
+            <Button fx:id="fabNewChat"
+                    text="✎"
+                    onAction="#onFabNewChat"
+                    styleClass="fab"
+                    StackPane.alignment="BOTTOM_RIGHT">
+                <StackPane.margin>
+                    <Insets bottom="24" right="24"/>
+                </StackPane.margin>
+            </Button>
+        </StackPane>
     </center>
 
 </BorderPane>

@@ -5,7 +5,11 @@ public enum View {
     LOGIN     ("/ui/fxml/login.fxml",     "Login"),
     SIGN_UP   ("/ui/fxml/sign_up.fxml",   "Sign Up"),
     CHAT_LIST ("/ui/fxml/chat_list.fxml", "Chats"),
-    CHAT      ("/ui/fxml/chat.fxml",      "Chat");   // <-- add this
+    CHAT      ("/ui/fxml/chat.fxml",      "Chat"),
+    NEW_CHAT  ("/ui/fxml/new_chat.fxml",  "New Chat"),
+    ADD_CONTACT ("/ui/fxml/add_contact.fxml", "Add Contact"),
+    PROFILE   ("/ui/fxml/profile.fxml",   "Profile");
+
 
     private final String fxmlPath;
     private final String title;

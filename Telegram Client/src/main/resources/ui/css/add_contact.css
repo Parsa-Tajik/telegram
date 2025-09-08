@@ -1,0 +1,10 @@
+@import url("new_chat.css"); /* reuse header, buttons */
+
+.text-field {
+    -fx-background-color: -color-surface-2;
+    -fx-background-radius: 10px;
+    -fx-padding: 10 12;
+    -fx-text-fill: -color-text;
+    -fx-prompt-text-fill: -color-text-muted;
+}
+.text-field:focused { -fx-background-color: -color-surface-3; }

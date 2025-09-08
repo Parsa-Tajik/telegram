@@ -277,6 +277,48 @@ public final class NdjsonTestServer {
                         r.addProperty("pinned", req.get("pinned").getAsBoolean());
                         yield r;
                     }
+                    case "CHAT_READ" -> {
+                        JsonObject r = base(id, "CHAT_READ_OK");
+                        String chatId = str(req, "chatId");
+                        String upto   = str(req, "upto");
+                        long now = System.currentTimeMillis();
+                        r.addProperty("server_time", now);
+                        r.addProperty("chatId", chatId);
+                        if (upto != null) r.addProperty("upto", upto);
+                        // ایونت وضعیت برای همه (کلاینت‌ها خودشان فیلتر می‌کنند)
+                        JsonObject ev = new JsonObject();
+                        ev.addProperty("type", "EVENT");
+                        ev.addProperty("event", "message_status");
+                        if (chatId != null) ev.addProperty("chatId", chatId);
+                        if (upto != null) ev.addProperty("messageId", upto);
+                        ev.addProperty("status", "READ");
+                        ev.addProperty("ts", now);
+                        broadcast(ev);
+                        yield r;
+                    }
+                    case "message_send" -> {
+                        JsonObject r = base(id, "MESSAGE_SEND_OK");
+                        r.addProperty("status", "ok");
+                        r.addProperty("messageId", "srv-" + java.util.UUID.randomUUID());
+                        r.addProperty("ts", System.currentTimeMillis());
+                        yield r;
+                    }
+                    case "messages_delete" -> {
+                        JsonObject r = base(id, "MESSAGE_DELETE_OK");
+                        r.addProperty("status", "ok");
+                        String scope = str(req, "for"); // "me" | "all"
+                        if ("all".equalsIgnoreCase(scope)) {
+                            JsonObject ev = new JsonObject();
+                            ev.addProperty("type", "EVENT");
+                            ev.addProperty("event", "message_deleted");
+                            ev.addProperty("chatId", str(req, "chatId"));
+                            ev.addProperty("messageId", str(req, "messageId"));
+                            ev.addProperty("scope", "all");
+                            ev.addProperty("ts", System.currentTimeMillis());
+                            broadcast(ev);
+                        }
+                        yield r;
+                    }
                     default -> {
                         // Generic acknowledge for unknown test commands
                         JsonObject r = base(id, type + "_OK");

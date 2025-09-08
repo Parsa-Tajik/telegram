@@ -19,6 +19,7 @@ import javafx.scene.Node;
 import javafx.scene.control.*;
 import javafx.scene.layout.*;
 import javafx.scene.shape.Circle;
+import com.google.gson.JsonElement;
 
 import java.time.Instant;
 import java.time.LocalDate;
@@ -31,12 +32,19 @@ import javafx.beans.binding.DoubleBinding;
 import javafx.scene.text.Text;
 import javafx.scene.text.TextFlow;
 
-import javafx.beans.binding.Bindings;
-import javafx.beans.binding.DoubleBinding;
 import javafx.scene.control.ScrollPane;
-import javafx.scene.text.Text;
-import javafx.scene.text.TextFlow;
 
+import javafx.scene.control.Label;
+import javafx.scene.control.ScrollBar;
+import javafx.scene.input.MouseEvent;
+import javafx.collections.ListChangeListener;
+import javafx.beans.value.ChangeListener;
+
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+
+import javafx.scene.input.Clipboard;
+import javafx.scene.input.ClipboardContent;
 
 
 /**
@@ -55,6 +63,11 @@ public final class ChatController {
     @FXML private TextArea messageInput;
     @FXML private Button   sendBtn;
 
+    @FXML private HBox  replyBox;
+    @FXML private Label replyTitle;
+    @FXML private Label replySnippet;
+    @FXML private Button replyClose;
+
     // ----- wiring
     private final App app;
     private final Navigator nav;
@@ -64,9 +77,17 @@ public final class ChatController {
     private String chatId;
     private ChatSummary.Kind chatKind;
     private String chatTitle;
+    private Message replyTarget;
 
     // items = messages + date separators
     private final ObservableList<Object> items = FXCollections.observableArrayList();
+
+    private final Map<String,String> reqIdToMsgId = new ConcurrentHashMap<>(); // reqId -> (tempId یا serverId)
+
+    private Consumer<JsonObject> eventHandler;
+    private boolean atBottom = true;
+    private int newCount = 0;
+    @FXML private Label newChip;
 
     // paging
     private String  cursorNext = null;
@@ -75,6 +96,8 @@ public final class ChatController {
 
     // events
     private Consumer<JsonObject> evtListener;
+    // read-dedup: prevent duplicate CHAT_READ for same last message
+    private String lastReadUptoId = null;
 
     // --- constructors for Navigator's ControllerFactory (App, Navigator) OR default
     public ChatController(App app, Navigator nav) {
@@ -88,6 +111,7 @@ public final class ChatController {
         this.chatId   = chatId;
         this.chatKind = kind;
         this.chatTitle= title;
+        this.lastReadUptoId = null;
 
         headerTitle.setText(title != null ? title : "");
         headerSubtitle.setText(" "); // presence later
@@ -113,23 +137,96 @@ public final class ChatController {
             }
         });
 
-        if (backBtn != null) backBtn.setOnAction(e -> { if (nav != null) nav.back(); });
+        if (backBtn != null) backBtn.setOnAction(e -> { if (nav != null){unsubscribeEvents(); nav.back();} });
 
         // subscribe to events
         if (app != null) {
             evtListener = evt -> {
                 if (!"EVENT".equalsIgnoreCase(s(evt,"type"))) return;
-                if (!"message_new".equalsIgnoreCase(s(evt,"event"))) return;
-                String cid = s(evt,"chatId");
-                if (!Objects.equals(cid, this.chatId)) return;
+                String ev = s(evt,"event"); if (ev == null) return;
+                switch (ev.toLowerCase()) {
+                    case "message_new" -> {
+                        String cid = s(evt, "chatId");
+                        if (cid == null) cid = s(evt, "chat_id");
+                        if (!java.util.Objects.equals(cid, this.chatId)) break;
 
-                JsonObject m = evt.has("msg") ? evt.getAsJsonObject("msg") : null;
-                if (m == null) return;
-                Message msg = fromEventMessage(m, cid);
-                Platform.runLater(() -> {
-                    appendWithDate(msg);
-                    autoScrollIfNearBottom();
-                });
+                        com.google.gson.JsonObject m = evt.has("msg")
+                                ? evt.getAsJsonObject("msg")
+                                : (evt.has("message") ? evt.getAsJsonObject("message") : null);
+                        if (m == null) break;
+
+                        Message incoming = new Message(
+                                s(m, "id"),
+                                cid,
+                                s(m, "from"),
+                                safeLong(m.get("ts")),
+                                MessageKind.TEXT,
+                                s(m, "text"),
+                                /*outgoing*/ false,
+                                MessageStatus.SENT
+                        );
+
+                        javafx.application.Platform.runLater(() -> {
+                            appendWithDate(incoming);
+                            autoScrollIfNearBottom();
+                        });
+                    }
+                    case "message_status" -> {
+                        String cid = s(evt, "chatId");
+                        if (cid == null) cid = s(evt, "chat_id");
+                        if (!java.util.Objects.equals(cid, this.chatId)) break;
+
+                        String mid = s(evt, "messageId");
+                        if (mid == null) mid = s(evt, "message_id");
+                        String st  = s(evt, "status");
+                        if (mid == null || st == null) break;
+
+                        // 1) مستقیم با همینی که سرور فرستاده امتحان کن
+                        int idx = indexOfMessageId(mid);
+                        String targetId = mid;
+
+                        // 2) اگر نبود، شاید هنوز tempId باشد: tmp-<reqId>
+                        if (idx < 0) {
+                            String tmpId = "tmp-" + mid;
+                            idx = indexOfMessageId(tmpId);
+                            if (idx >= 0) targetId = tmpId;
+                        }
+
+                        // 3) اگر باز هم نبود، از نگاشت reqId -> (tempId/serverId) استفاده کن
+                        if (idx < 0) {
+                            String mapped = reqIdToMsgId.get(mid);
+                            if (mapped != null) {
+                                idx = indexOfMessageId(mapped);
+                                if (idx >= 0) targetId = mapped;
+                            }
+                        }
+
+                        if (idx < 0) return; // پیامی با این id توی لیست نیست
+
+                        MessageStatus ms = switch (st.toUpperCase()) {
+                            case "DELIVERED" -> MessageStatus.DELIVERED;
+                            case "READ"      -> MessageStatus.READ;
+                            default -> null;
+                        };
+                        if (ms == null) return;
+
+                        // فقط پیام‌های خودم باید تیک بگیرند
+                        Object it = items.get(idx);
+                        if (it instanceof Message m && m.outgoing()) {
+                            Message up = new Message(m.id(), m.chatId(), m.from(), m.ts(), m.kind(), m.text(), true, ms);
+                            items.set(idx, up);
+                        }
+                    }
+                    case "message_deleted" -> {
+                        String cid = s(evt,"chatId"); if (!Objects.equals(cid, this.chatId)) return;
+                        String mid = s(evt,"messageId"); if (mid == null) return;
+                        javafx.application.Platform.runLater(() -> {
+                            int idx = indexOfMessageId(mid);
+                            if (idx >= 0) items.remove(idx);
+                        });
+                    }
+                    default -> {}
+                }
             };
             app.eventBus().subscribe(evtListener);
         }
@@ -155,8 +252,34 @@ public final class ChatController {
                 cursorNext = page.cursorNext;
                 hasMore = page.hasMore;
                 scrollToBottom();
+                tryMarkRead(null);
             });
         });
+    }
+
+    // خواندن ایمن رشته از JsonObject
+    private static String str(JsonObject obj, String key) {
+        if (obj == null || key == null) return null;
+        if (!obj.has(key) || obj.get(key).isJsonNull()) return null;
+        try {
+            return obj.get(key).getAsString();
+        } catch (Exception ignore) {
+            return String.valueOf(obj.get(key));
+        }
+    }
+
+    // خواندن ایمن زمان/عدد (long) از JsonElement
+    private static long safeLong(JsonElement el) {
+        if (el == null || el.isJsonNull()) return 0L;
+        try {
+            return el.getAsLong();
+        } catch (Exception e) {
+            try {
+                return (long) el.getAsDouble();
+            } catch (Exception e2) {
+                return 0L;
+            }
+        }
     }
 
     private void loadOlderIfNeeded() {
@@ -204,6 +327,8 @@ public final class ChatController {
         String reqId = Ids.req("msg");
         String tempId = "tmp-" + reqId;
 
+        reqIdToMsgId.put(reqId, tempId);
+
         // 2) پیام محلی با وضعیت SENDING
         Message local = new Message(
                 tempId,                      // id موقت
@@ -220,9 +345,18 @@ public final class ChatController {
         messageInput.clear();
 
         // 3) ارسال واقعی با عبور tempId جهت replace دقیق
-        chatApi.sendText(chatId, text, tempId)
-                .thenAccept(res -> replaceTempWithServer(res.clientTempId, res.messageId, res.ts))
-                .exceptionally(err -> { markTempFailed(tempId); return null; });
+        // 3) ارسال واقعی (معمولی / ریپلای)
+        String replyToId = (replyTarget != null ? replyTarget.id() : null);
+        if (replyToId != null && !replyToId.isBlank()) {
+            chatApi.sendTextWithReply(chatId, text, tempId, replyToId)
+                    .thenAccept(res -> replaceTempWithServer(res.clientTempId, res.messageId, res.ts))
+                    .exceptionally(err -> { markTempFailed(tempId); return null; });
+        } else {
+            chatApi.sendText(chatId, text, tempId)
+                    .thenAccept(res -> replaceTempWithServer(res.clientTempId, res.messageId, res.ts))
+                    .exceptionally(err -> { markTempFailed(tempId); return null; });
+        }
+        clearReplyTarget();
     }
 
     private int indexOfMessageId(String id) {
@@ -241,8 +375,12 @@ public final class ChatController {
             int idx = indexOfMessageId(tempId);
             if (idx < 0) return;
             Message old = (Message) items.get(idx);
+
+            // ❗ اگر serverId نداشتیم، همون tempId رو نگه داریم (id=null نشه)
+            String newId = (serverId != null && !serverId.isBlank()) ? serverId : old.id();
+
             Message upgraded = new Message(
-                    serverId,
+                    newId,
                     old.chatId(),
                     old.from(),
                     ts > 0 ? ts : old.ts(),
@@ -251,9 +389,16 @@ public final class ChatController {
                     true,
                     MessageStatus.SENT
             );
+
+            // فقط اگر serverId واقعی گرفتیم، نگاشت reqId→serverId را به‌روزرسانی کن
+            if (tempId != null && tempId.startsWith("tmp-") && serverId != null && !serverId.isBlank()) {
+                String reqId = tempId.substring(4);
+                reqIdToMsgId.put(reqId, serverId);
+            }
             items.set(idx, upgraded);
         });
     }
+
 
     /** تغییر وضعیت پیام موقت به FAILED (برای نمایش Retry). */
     private void markTempFailed(String tempId) {
@@ -393,6 +538,7 @@ public final class ChatController {
                 TextFlow content = new TextFlow(textNode);
                 content.getStyleClass().setAll(bubbleClass);
 
+                // پیچش متن داخل بابل
                 textNode.wrappingWidthProperty().bind(
                         Bindings.createDoubleBinding(
                                 () -> Math.max(160, getListView().getWidth() * 0.72 - 24),
@@ -407,14 +553,19 @@ public final class ChatController {
                 );
                 content.maxWidthProperty().bind(maxBubbleWidth);
 
-                // خط متادیتا (ساعت + آیکن وضعیت) — راست‌چین
+                // --- متادیتا: ساعت + (فقط برای outgoing) آیکن وضعیت ---
                 HBox meta = new HBox(8);
-                meta.setAlignment(Pos.CENTER_RIGHT);
+                meta.setAlignment(m.outgoing() ? Pos.CENTER_RIGHT : Pos.CENTER_LEFT);
                 Label time = new Label(Formats.friendlyTs(m.ts() * 1000L, ZoneId.systemDefault()));
-                Label statusIcon = new Label(statusGlyph(m.status()));
-                meta.getChildren().addAll(time, statusIcon);
+                meta.getChildren().add(time);
 
-                // پکیج نهایی حباب + متادیتا (+ Retry در صورت خطا)
+                // ⬅️ فقط پیام‌های خودم تیک داشته باشند
+                if (m.outgoing()) {
+                    Label statusIcon = new Label(statusGlyph(m.status()));
+                    meta.getChildren().add(statusIcon);
+                }
+
+                // بدنهٔ نهایی: بابل + متادیتا (+ Retry برای FAILED outgoing)
                 VBox box = new VBox(4, content, meta);
 
                 if (m.outgoing() && m.status() == MessageStatus.FAILED) {
@@ -429,6 +580,24 @@ public final class ChatController {
                 HBox row = new HBox(box);
                 row.setAlignment(m.outgoing() ? Pos.CENTER_RIGHT : Pos.CENTER_LEFT);
                 row.maxWidthProperty().bind(getListView().widthProperty().subtract(12));
+
+                // ===== Context Menu =====
+                ContextMenu menu = new ContextMenu();
+                MenuItem miCopy = new MenuItem("Copy text");
+                miCopy.setOnAction(ev -> {
+                    ClipboardContent cc = new ClipboardContent();
+                    cc.putString(m.text() != null ? m.text() : "");
+                    Clipboard.getSystemClipboard().setContent(cc);
+                });
+                MenuItem miReply = new MenuItem("Reply");
+                miReply.setOnAction(ev -> setReplyTarget(m));
+                MenuItem miDelMe = new MenuItem("Delete for me");
+                miDelMe.setOnAction(ev -> deleteForMe(m));
+                MenuItem miDelAll = new MenuItem("Delete for everyone");
+                miDelAll.setDisable(!m.outgoing()); // فقط پیام‌های خودم
+                miDelAll.setOnAction(ev -> deleteForAll(m));
+                menu.getItems().setAll(miCopy, miReply, new SeparatorMenuItem(), miDelMe, miDelAll);
+                setContextMenu(menu);
 
                 setGraphic(row);
                 setText(null);
@@ -501,7 +670,11 @@ public final class ChatController {
             messagesList.setCellFactory(lv -> new MsgCell()); // اگر MsgCell استاتیک است: راه حل callback قبلاً گفتیم
         }
 
-        backBtn.setOnAction(e -> nav.back()); // go back to previous view
+        backBtn.setOnAction(e -> {unsubscribeEvents(); nav.back();}); // go back to previous view
+        if (replyClose != null) replyClose.setOnAction(e -> clearReplyTarget());
+        if (replyBox != null)   replyBox.setOnMouseClicked(e -> {
+            if (replyTarget != null) scrollToMessageId(replyTarget.id());
+        });
     }
 
     /** Called by Navigator right after FXML load. */
@@ -534,6 +707,16 @@ public final class ChatController {
         }
 
         installAutoGrow(messageInput, 1, 5);
+
+        // 4.4: subscribe to events
+        if (eventHandler == null) {
+            eventHandler = this::onEvent;
+            app.eventBus().subscribe(eventHandler);
+        }
+        // 4.4: install auto-scroller/at-bottom detector
+        installAutoScroller();
+        // چیپ را اول پنهان کن
+        hideNewChip();
     }
 
     private static String statusGlyph(MessageStatus st) {
@@ -607,5 +790,197 @@ public final class ChatController {
         // اجرای اول پس از ساخت Skin
         Platform.runLater(update);
     }
+
+
+    /** لغو سابسکرایب امن */
+    private void unsubscribeEvents() {
+        if (eventHandler != null) {
+            app.eventBus().unsubscribe(eventHandler);
+            eventHandler = null;
+        }
+    }
+
+    /** هندل همهٔ رویدادهای EVENT از سرور */
+    private void onEvent(JsonObject evt) {
+        if (evt == null) return;
+        String t = evt.has("type") ? evt.get("type").getAsString() : "";
+        if (!"EVENT".equals(t)) return;
+        String kind = evt.has("event") ? evt.get("event").getAsString() : "";
+        switch (kind) {
+            case "MESSAGE_NEW" -> handleMessageNew(evt);
+            case "MESSAGE_STATUS" -> handleMessageStatus(evt);
+        }
+    }
+
+    /** رویداد پیام جدید (دیگران). اگر همین چت باز است، اضافه کن؛ وگرنه بی‌خیال (ChatList خودش آپدیت می‌شود). */
+    private void handleMessageNew(JsonObject evt) {
+        String cid = str(evt, "chat_id");
+        if (cid == null || !cid.equals(chatId)) return; // چت دیگری است
+        JsonObject m = evt.getAsJsonObject("message");
+        if (m == null) return;
+        Message incoming = new Message(
+                str(m, "id"),
+                chatId,
+                str(m, "from"),
+                safeLong(m.get("ts")),
+                MessageKind.TEXT, // اگر kind دیگری آمد، می‌توانی parseKind اضافه کنی
+                str(m, "text"),
+                false,
+                MessageStatus.SENT
+        );
+        Platform.runLater(() -> {
+            appendWithDate(incoming);
+            if (isAtBottom()) {
+                scrollToBottom();
+                // وقتی پایینیم و فوکوس داریم، سریعاً read بزنیم
+                tryMarkRead(null);
+            } else {
+                newCount++;
+                showNewChip();
+            }
+        });
+    }
+
+    /** ارتقای وضعیت پیام‌های خودم: SENT → DELIVERED/READ */
+    private void handleMessageStatus(JsonObject evt) {
+        String mid = str(evt, "message_id");
+        String status = str(evt, "status");
+        if (mid == null || status == null) return;
+        MessageStatus st = switch (status) {
+            case "DELIVERED" -> MessageStatus.DELIVERED;
+            case "READ" -> MessageStatus.READ;
+            default -> null;
+        };
+        if (st == null) return;
+        Platform.runLater(() -> {
+            int idx = indexOfMessageId(mid);
+            if (idx < 0) return;
+            Message old = (Message) items.get(idx);
+            if (!old.outgoing()) return; // فقط پیام‌های خودم
+            Message up = new Message(
+                    old.id(), old.chatId(), old.from(), old.ts(),
+                    old.kind(), old.text(), true, st
+            );
+            items.set(idx, up);
+        });
+    }
+
+    /** نصب شنونده برای تشخیص اینکه کاربر «پایین لیست» است */
+    private void installAutoScroller() {
+        Platform.runLater(() -> {
+            ScrollBar vbar = (ScrollBar) messagesList.lookup(".scroll-bar:vertical");
+            if (vbar == null) return;
+            ChangeListener<Number> ln = (obs, ov, nv) -> {
+                atBottom = (vbar.getValue() >= vbar.getMax() - 0.5);
+                if (atBottom && newCount > 0) {
+                    hideNewChip();
+                    tryMarkRead(null);
+                }
+            };
+            vbar.valueProperty().addListener(ln);
+            // هر تغییری در آیتم‌ها → اگر در کف بودیم، خودکار اسکرول
+            items.addListener((ListChangeListener<Object>) change -> {
+                if (isAtBottom()) {
+                    scrollToBottom();
+                }
+            });
+
+        });
+    }
+
+    private boolean isAtBottom() { return atBottom; }
+
+    /** چیپ «N پیام جدید» را نمایش/به‌روزرسانی کن */
+    private void showNewChip() {
+        if (newChip == null) return;
+        newChip.setText(newCount + " پیام جدید");
+        newChip.setVisible(true);
+        newChip.setManaged(true);
+    }
+
+    /** چیپ را پنهان و شمارنده را صفر کن */
+    private void hideNewChip() {
+        if (newChip == null) return;
+        newCount = 0;
+        newChip.setVisible(false);
+        newChip.setManaged(false);
+    }
+
+    /** کلیک روی چیپ: برو پایین، چیپ محو، و مارک‌از‌رید */
+    @FXML
+    private void onNewChipClick(MouseEvent e) {
+        hideNewChip();
+        scrollToBottom();
+        tryMarkRead(null);
+    }
+
+    /** Update status of my (outgoing) message by id. */
+    private void updateOutgoingStatus(String messageId, MessageStatus status) {
+        int idx = indexOfMessageId(messageId);
+        if (idx < 0) return;
+        Object it = items.get(idx);
+        if (!(it instanceof Message m)) return;
+        if (!m.outgoing()) return; // فقط پیام‌های خودم
+        Message up = new Message(m.id(), m.chatId(), m.from(), m.ts(), m.kind(), m.text(), true, status);
+        items.set(idx, up);
+    }
+
+    /** IDِ آخرین پیام در لیست (DateSep را رد می‌کند). */
+    private String lastMessageId() {
+        for (int i = items.size()-1; i >= 0; i--) {
+            Object it = items.get(i);
+            if (it instanceof Message m) return m.id();
+        }
+        return null;
+    }
+
+    /** ارسال CHAT_READ تا پیام مشخص؛ برای همان lastId دو بار نمی‌فرستیم. */
+    private void tryMarkRead(String upto) {
+        if (chatApi == null || chatId == null || chatId.isBlank()) return;
+        String target = (upto != null && !upto.isBlank()) ? upto : lastMessageId();
+        if (target == null) return;
+        if (target.equals(lastReadUptoId)) return; // dedup
+        lastReadUptoId = target;
+        chatApi.markRead(chatId, target);
+    }
+
+    // Set / clear reply target + preview
+    private void setReplyTarget(Message m) {
+        replyTarget = m;
+        if (replyBox != null) {
+            if (replyTitle != null)   replyTitle.setText(m.outgoing() ? "You" : (m.from() != null ? m.from() : "Unknown"));
+            if (replySnippet != null) replySnippet.setText(m.text() != null ? m.text().strip() : "");
+            replyBox.setManaged(true); replyBox.setVisible(true);
+        }
+    }
+    private void clearReplyTarget() {
+        replyTarget = null;
+        if (replyBox != null) { replyBox.setManaged(false); replyBox.setVisible(false); }
+    }
+    private void scrollToMessageId(String id) {
+        int idx = indexOfMessageId(id);
+        if (idx >= 0) {
+            messagesList.scrollTo(idx);
+            messagesList.getSelectionModel().clearAndSelect(idx);
+        }
+    }
+
+    // Deletions
+    private void deleteForMe(Message m) {
+        int idx = indexOfMessageId(m.id());
+        if (idx >= 0) items.remove(idx);
+        if (chatApi != null) chatApi.deleteForMe(chatId, m.id());
+    }
+    private void deleteForAll(Message m) {
+        if (chatApi == null) return;
+        chatApi.deleteForAll(chatId, m.id())
+                .thenRun(() -> Platform.runLater(() -> {
+                    int idx = indexOfMessageId(m.id());
+                    if (idx >= 0) items.remove(idx);
+                }))
+                .exceptionally(err -> null);
+    }
+
+
 
 }

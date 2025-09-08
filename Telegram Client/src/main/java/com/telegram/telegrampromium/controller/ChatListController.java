@@ -4,6 +4,7 @@ import com.google.gson.JsonObject;
 import com.telegram.telegrampromium.api.ChatAPI;
 import com.telegram.telegrampromium.app.App;
 import com.telegram.telegrampromium.model.ChatSummary;
+import com.telegram.telegrampromium.nav.View;
 import com.telegram.telegrampromium.util.Formats;
 import javafx.application.Platform;
 import javafx.beans.value.ChangeListener;
@@ -12,6 +13,11 @@ import javafx.fxml.FXMLLoader;
 import javafx.scene.control.*;
 import javafx.scene.input.MouseButton;
 import javafx.scene.layout.Region;
+import javafx.scene.Parent;
+import javafx.scene.Scene;
+import javafx.scene.control.Button;
+import javafx.scene.layout.Pane;
+import java.io.IOException;
 
 import java.net.URL;
 import java.time.ZoneId;
@@ -38,6 +44,7 @@ public final class ChatListController {
 
     @FXML private Label titleLabel;
     @FXML private ListView<ChatSummary> list;
+    @FXML private Button fabNewChat;
 
     private ChatAPI chatApi;
     private String nextCursor;
@@ -102,6 +109,8 @@ public final class ChatListController {
         hookInfiniteScroll();
         app.eventBus().subscribe(this::onEvent);
     }
+
+    @FXML private void onFabNewChat() { if(nav != null) nav.push(View.NEW_CHAT); }
 
     /* ===================== Events (UI thread) ===================== */
 

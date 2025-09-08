@@ -116,8 +116,8 @@ public final class ChatAPI {
     }
 
     // Send result for text message
-    public static final class SendResult {
-        public final String clientTempId;
+    public class SendResult {
+        public final String clientTempId; // می‌تونه null باشه اگر متد 2آرگی صدا زده بشه
         public final String messageId;
         public final long ts;
         public SendResult(String clientTempId, String messageId, long ts) {
@@ -172,28 +172,31 @@ public final class ChatAPI {
 
     /** Send a text message to a chat. */
     public CompletableFuture<SendResult> sendText(String chatId, String text, String clientTempId) {
+        Objects.requireNonNull(chatId);
+        Objects.requireNonNull(text);
+        Objects.requireNonNull(clientTempId);
+
         String reqId = Ids.req("msg");
         JsonObject req = new JsonObject();
-        req.addProperty("type", "MESSAGE_SEND");
-        req.addProperty("id", reqId);
-        req.addProperty("chat_id", chatId);
+        req.addProperty("type", "REQ");
+        req.addProperty("cmd",  "message_send");
+        req.addProperty("id",   reqId);
+        req.addProperty("chatId", chatId);
         JsonObject msg = new JsonObject();
         msg.addProperty("kind", "text");
         msg.addProperty("text", text);
         msg.addProperty("clientTempId", clientTempId);
         req.add("msg", msg);
-        return client.request(req).thenApply(resp -> {
-            String t = str(resp, "type");
-            if (!"MESSAGE_SEND_OK".equals(t)) {
-                throw new IllegalStateException("Unexpected response type: " + t);
-            }
-            String mid = str(resp, "message_id");
-            long ts = safeLong(resp.get("ts"));
-            String echoedTemp = resp.has("clientTempId")
-                    ? resp.get("clientTempId").getAsString()
-                    : clientTempId;
-            return new SendResult(echoedTemp, mid, ts);
-        });
+
+        return client.request(req).orTimeout(10, TimeUnit.SECONDS)
+                .thenApply(resp -> {
+                    // بعضی سرورها به‌جای ts، server_time برمی‌گردونن
+                    String mid = str(resp, "messageId"); // ممکنه null باشه و ما با tempId ادامه می‌دیم
+                    long   ts  = resp.has("ts")
+                            ? safeLong(resp.get("ts"))
+                            : (resp.has("server_time") ? safeLong(resp.get("server_time")) : 0L);
+                    return new SendResult(clientTempId, mid, ts);
+                });
     }
 
     /** نسخهٔ قبلی برای سازگاری؛ صرفاً tempId تولید می‌کند و به اورلود جدید می‌سپارد. */
@@ -213,4 +216,74 @@ public final class ChatAPI {
             default      -> MessageKind.TEXT;
         };
     }
+
+    /** Mark chat as read up to a message id (inclusive). */
+    public java.util.concurrent.CompletableFuture<Void> markRead(String chatId, String uptoMessageId) {
+        java.util.Objects.requireNonNull(chatId, "chatId");
+        String reqId = com.telegram.telegrampromium.core.Ids.req("read");
+        com.google.gson.JsonObject req = new com.google.gson.JsonObject();
+        req.addProperty("type", "CHAT_READ");
+        req.addProperty("id",   reqId);
+        req.addProperty("chatId", chatId);
+        if (uptoMessageId != null && !uptoMessageId.isBlank()) {
+            req.addProperty("upto", uptoMessageId);
+        }
+        return client.request(req)
+                .orTimeout(10, java.util.concurrent.TimeUnit.SECONDS)
+                .thenAccept(resp -> {
+                    String t = str(resp, "type");
+                    String status = str(resp, "status");
+                    if (!"CHAT_READ_OK".equals(t) && !"ok".equalsIgnoreCase(status)) {
+                        throw new IllegalStateException("CHAT_READ failed: " + resp);
+                    }
+                });
+    }
+
+    /** Send text as a reply to another message. */
+    public java.util.concurrent.CompletableFuture<SendResult> sendTextWithReply(String chatId, String text, String clientTempId, String replyToId) {
+        Objects.requireNonNull(replyToId, "replyToId");
+        String reqId = Ids.req("msg");
+        JsonObject req = new JsonObject();
+        req.addProperty("type", "REQ");
+        req.addProperty("cmd",  "message_send");
+        req.addProperty("id",   reqId);
+        req.addProperty("chatId", chatId);
+        JsonObject msg = new JsonObject();
+        msg.addProperty("kind", "text");
+        msg.addProperty("text", text);
+        msg.addProperty("clientTempId", clientTempId);
+        msg.addProperty("replyToId", replyToId); // <<— کلید ریپلای
+        req.add("msg", msg);
+        return client.request(req).orTimeout(10, TimeUnit.SECONDS)
+                .thenApply(resp -> new SendResult(clientTempId,
+                        str(resp,"messageId"),
+                        resp.has("ts") ? safeLong(resp.get("ts"))
+                                : (resp.has("server_time") ? safeLong(resp.get("server_time")) : 0L)));
+    }
+
+
+    /** Delete a message only for the current user. */
+    public java.util.concurrent.CompletableFuture<Void> deleteForMe(String chatId, String messageId) {
+        Objects.requireNonNull(chatId); Objects.requireNonNull(messageId);
+        JsonObject req = new JsonObject();
+        req.addProperty("type", "MESSAGE_DELETE");
+        req.addProperty("id",   Ids.req("del"));
+        req.addProperty("chat_id", chatId);
+        req.addProperty("message_id", messageId);
+        req.addProperty("for", "me");
+        return client.request(req).orTimeout(8, TimeUnit.SECONDS).thenApply(r -> null);
+    }
+
+    /** Delete a message for everyone in the chat. (server should broadcast message_deleted) */
+    public java.util.concurrent.CompletableFuture<Void> deleteForAll(String chatId, String messageId) {
+        Objects.requireNonNull(chatId); Objects.requireNonNull(messageId);
+        JsonObject req = new JsonObject();
+        req.addProperty("type", "MESSAGE_DELETE");
+        req.addProperty("id",   Ids.req("del"));
+        req.addProperty("chat_id", chatId);
+        req.addProperty("message_id", messageId);
+        req.addProperty("for", "all");
+        return client.request(req).orTimeout(8, TimeUnit.SECONDS).thenApply(r -> null);
+    }
+
 }
