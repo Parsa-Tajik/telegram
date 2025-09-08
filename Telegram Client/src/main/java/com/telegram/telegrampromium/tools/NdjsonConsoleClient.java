@@ -38,7 +38,7 @@ public final class NdjsonConsoleClient {
 
     public static void main(String[] args) {
         final String host = args.length > 0 ? args[0] : "localhost";
-        final int port    = args.length > 1 ? parsePort(args[1], 1688) : 1688;
+        final int port    = args.length > 1 ? parsePort(args[1], 9090) : 9090;
 
         System.out.println("[INFO] Connecting to " + host + ":" + port + " ...");
 
@@ -49,7 +49,6 @@ public final class NdjsonConsoleClient {
 
             final Flags flags = new Flags();
 
-            // Reader thread: prints every incoming NDJSON line
             Thread reader = new Thread(() -> {
                 String line;
                 try {
@@ -70,7 +69,7 @@ public final class NdjsonConsoleClient {
             for (;;) {
                 System.out.print("> ");
                 String line = cin.readLine();
-                if (line == null) break;                 // EOF (Ctrl+D/Ctrl+Z)
+                if (line == null) break;
                 line = line.trim();
                 if (line.isEmpty()) continue;
 
@@ -79,7 +78,6 @@ public final class NdjsonConsoleClient {
                     if (!handleCommand(line, flags)) {
                         break;                            // :quit
                     }
-                    continue;
                 }
 
                 // Multiline JSON block: <<< ... >>>
@@ -91,7 +89,6 @@ public final class NdjsonConsoleClient {
                     }
                     line = sb.toString();
                 }
-
                 // Parse, ensure object, optionally inject id, send as single NDJSON line
                 try {
                     JsonElement el = JsonParser.parseString(line);

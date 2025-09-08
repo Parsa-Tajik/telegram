@@ -1,104 +1,133 @@
 package telegramserver.services;
 
-import telegramserver.models.User;
-
 import java.sql.*;
 import java.util.*;
 
 import static telegramserver.services.GroupService.resolveUserId;
 
-// Tracks members of each chat
 public class ChatService {
-    private static final Map<Integer, Set<String>> chatMembers = new HashMap<>();
     private static String url = "jdbc:postgresql://localhost:5432/Telegram";
     private static String user = "postgres";
     private static String password = "AmirMahdiImani";
-    public static Scanner scanner = new Scanner(System.in);
-
 
     public static boolean joinChat(int chatId, String username) {
-        String sqlType = "SELECT type, id FROM chats WHERE chat_id = ?";
+        Integer userId = resolveUserId(username);
+        if (userId == null) return false;
+
+        String sql = "INSERT INTO user_chats (userid, chatid, pinned_order, archived, last_message_id, unread_count) " +
+                "VALUES (?, ?, 0, false, 0, 0) ON CONFLICT (user_id, chat_id) DO NOTHING";
+
         try (Connection conn = DriverManager.getConnection(url, user, password);
-             PreparedStatement ps = conn.prepareStatement(sqlType)) {
+             PreparedStatement ps = conn.prepareStatement(sql)) {
 
-            ps.setInt(1, chatId);
-            try (ResultSet rs = ps.executeQuery()) {
-                if (rs.next()) {
-                    String type = rs.getString("type");
-                    int dbChatId = rs.getInt("id");
+            ps.setInt(1, userId);
+            ps.setInt(2, chatId);
+            ps.executeUpdate();
+            return true;
 
-                    Integer uid = resolveUserId(username);
-                    if (uid == null) return false;
-
-                    String insertSql;
-                    if ("group".equalsIgnoreCase(type)) {
-                        insertSql = "INSERT INTO group_members (group_id, user_id, joined_at, is_admin, is_accepted) VALUES (?, ?, ?, ?, ?)";
-                    } else if ("channel".equalsIgnoreCase(type)) {
-                        insertSql = "INSERT INTO channel_members (channel_id, user_id, joined_at, is_admin, is_accepted) VALUES (?, ?, ?, ?, ?)";
-                    } else {
-                        return false;
-                    }
-
-                    try (PreparedStatement insertPs = conn.prepareStatement(insertSql)) {
-                        insertPs.setInt(1, dbChatId);
-                        insertPs.setInt(2, uid);
-                        insertPs.setTimestamp(3, new Timestamp(System.currentTimeMillis()));
-                        insertPs.setBoolean(4, false);
-                        insertPs.setBoolean(5, true);
-                        insertPs.executeUpdate();
-                        return true;
-                    }
-                }
-            }
         } catch (SQLException e) {
             e.printStackTrace();
+            return false;
         }
-        return false;
     }
-
 
     public static boolean leaveChat(int chatId, String username) {
-        Integer uid = resolveUserId(username);
-        if (uid == null) return false;
+        Integer userId = resolveUserId(username);
+        if (userId == null) return false;
 
-        String sqlType = "SELECT type, id FROM chats WHERE chat_id = ?";
+        String sql = "DELETE FROM user_chats WHERE userid = ? AND chatid = ?";
         try (Connection conn = DriverManager.getConnection(url, user, password);
-             PreparedStatement ps = conn.prepareStatement(sqlType)) {
+             PreparedStatement ps = conn.prepareStatement(sql)) {
 
-            ps.setInt(1, chatId);
+            ps.setInt(1, userId);
+            ps.setInt(2, chatId);
+            int rows = ps.executeUpdate();
+            return rows > 0;
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
+
+    public static boolean archiveChat(int chatId, String username, boolean archive) {
+        Integer userId = resolveUserId(username);
+        if (userId == null) return false;
+
+        String sql = "UPDATE user_chats SET archived = ? WHERE userid = ? AND chatid = ?";
+        try (Connection conn = DriverManager.getConnection(url, user, password);
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+
+            ps.setBoolean(1, archive);
+            ps.setInt(2, userId);
+            ps.setInt(3, chatId);
+            int rows = ps.executeUpdate();
+            return rows > 0;
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
+
+    public static boolean pinChat(int chatId, String username, int pinOrder) {
+        Integer userId = resolveUserId(username);
+        if (userId == null) return false;
+
+        String sql = "UPDATE user_chats SET pinned_order = ? WHERE userid = ? AND chatid = ?";
+        try (Connection conn = DriverManager.getConnection(url, user, password);
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+
+            ps.setInt(1, pinOrder);
+            ps.setInt(2, userId);
+            ps.setInt(3, chatId);
+            int rows = ps.executeUpdate();
+            return rows > 0;
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
+
+    public static boolean updateLastMessage(int chatId, int messageId) {
+        String sql = "UPDATE user_chats SET last_message_id = ?, unread_count = unread_count + 1 WHERE chat_id = ?";
+        try (Connection conn = DriverManager.getConnection(url, user, password);
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+
+            ps.setInt(1, messageId);
+            ps.setInt(2, chatId);
+            ps.executeUpdate();
+            return true;
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
+
+    public static Set<Integer> getUserChats(String username) {
+        Integer userId = resolveUserId(username);
+        if (userId == null) return Collections.emptySet();
+
+        Set<Integer> chats = new HashSet<>();
+        String sql = "SELECT chat_id FROM user_chats WHERE user_id = ? AND archived = false ORDER BY pinned_order DESC, chat_id DESC";
+
+        try (Connection conn = DriverManager.getConnection(url, user, password);
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+
+            ps.setInt(1, userId);
             try (ResultSet rs = ps.executeQuery()) {
-                if (rs.next()) {
-                    String type = rs.getString("type");
-                    int dbChatId = rs.getInt("id");
-
-                    String deleteSql;
-                    if ("group".equalsIgnoreCase(type)) {
-                        deleteSql = "DELETE FROM group_members WHERE group_id = ? AND user_id = ?";
-                    } else if ("channel".equalsIgnoreCase(type)) {
-                        deleteSql = "DELETE FROM channel_members WHERE channel_id = ? AND user_id = ?";
-                    } else {
-                        return false;
-                    }
-
-                    try (PreparedStatement deletePs = conn.prepareStatement(deleteSql)) {
-                        deletePs.setInt(1, dbChatId);
-                        deletePs.setInt(2, uid);
-                        int rows = deletePs.executeUpdate();
-                        if (rows > 0) {
-                            chatMembers.putIfAbsent(chatId, new HashSet<>());
-                            chatMembers.get(chatId).remove(username);
-                            return true;
-                        }
-                    }
+                while (rs.next()) {
+                    chats.add(rs.getInt("chat_id"));
                 }
             }
+
         } catch (SQLException e) {
             e.printStackTrace();
         }
-        return false;
+        return chats;
     }
-
-
     public static Set<String> getMembers(int chatId) {
         Set<String> members = new HashSet<>();
         String sqlType = "SELECT type, id FROM chats WHERE chat_id = ?";
@@ -133,9 +162,8 @@ public class ChatService {
         } catch (SQLException e) {
             e.printStackTrace();
         }
-
-        chatMembers.put(chatId, members);
         return members;
     }
+
 
 }
