@@ -14,7 +14,11 @@ import javafx.geometry.Pos;
 import java.io.IOException;
 import java.util.List;
 import java.util.Objects;
+import java.util.stream.Collectors;
 
+import com.telegram.telegrampromium.api.ContactsAPI;
+import com.telegram.telegrampromium.api.ContactsAPI.ContactBrief;
+import com.telegram.telegrampromium.core.Client;
 import com.telegram.telegrampromium.nav.Navigator;
 import com.telegram.telegrampromium.app.App;
 
@@ -22,6 +26,7 @@ public class NewChatController {
 
     private final App app;
     private final Navigator nav;
+    private ContactsAPI contactsApi;
     @FXML private ListView<ContactItem> contactsList;
 
     public NewChatController(App app, Navigator nav) {
@@ -31,16 +36,51 @@ public class NewChatController {
 
     @FXML
     private void initialize() {
-        // نمونه‌دیتا (سکلت UI) — بعداً با API کانتکت‌ها جایگزین می‌کنیم
-        contactsList.getItems().setAll(List.of(
-                new ContactItem("u_alice", "Alice", "لحظاتی پیش"),
-                new ContactItem("u_bob", "Bob", "۲ ساعت پیش"),
-                new ContactItem("u_charlie", "Charlie", "دیروز")
-        ));
-        contactsList.setCellFactory(lv -> new ContactCell());
-        contactsList.setOnMouseClicked(ev -> {
-            if (ev.getClickCount() == 2) openProfile(contactsList.getSelectionModel().getSelectedItem());
+        contactsList.setCellFactory(lv -> {
+            ContactCell cell = new ContactCell();
+            cell.setOnMouseClicked(ev -> {
+                if (!cell.isEmpty()) {
+                    openProfile(cell.getItem());
+                }
+            });
+            return cell;
         });
+
+        if (contactsApi == null) {
+            var client = app.client();
+            contactsApi = new ContactsAPI(client);
+        }
+
+        refreshContacts();
+    }
+
+    private void refreshContacts() {
+        // Placeholder برای تجربهٔ بهتر
+        contactsList.getItems().setAll(List.of(
+                new ContactItem(null, "در حال بارگیری مخاطبین...", "")
+        ));
+        contactsApi.listContacts().whenComplete((list, err) -> {
+            javafx.application.Platform.runLater(() -> {
+                if (err != null) {
+                    // اگر خواستی اینجا Toast/Alert هم نشان بدهیم
+                    contactsList.getItems().setAll(List.of(
+                            new ContactItem(null, "عدم دسترسی به سرور", "بعداً دوباره تلاش کنید.")
+                    ));
+                    return;
+                }
+                List<ContactItem> items = list.stream()
+                        .map(this::toItem)
+                        .collect(Collectors.toList());
+                contactsList.getItems().setAll(items);
+            });
+        });
+    }
+
+    private ContactItem toItem(ContactBrief b) {
+        String last = (b.lastSeenText != null && !b.lastSeenText.isBlank())
+                ? b.lastSeenText
+                : (b.lastSeen != null ? "last seen " + b.lastSeen : "");
+        return new ContactItem(b.userId, b.displayName != null ? b.displayName : (b.username != null ? b.username : "کاربر"), last);
     }
 
     // === Actions ===

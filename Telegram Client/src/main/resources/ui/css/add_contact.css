@@ -8,3 +8,5 @@
     -fx-prompt-text-fill: -color-text-muted;
 }
 .text-field:focused { -fx-background-color: -color-surface-3; }
+.tgm-page .label.error { -fx-text-fill: #ff6b6b; }   /* قرمز نرم برای خطا */
+.tgm-page .label.ok    { -fx-text-fill: -color-accent; } /* موفقیت با رنگ لهجه‌ی تم */

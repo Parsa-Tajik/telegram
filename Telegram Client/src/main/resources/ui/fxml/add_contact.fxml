@@ -21,12 +21,16 @@
         <VBox spacing="10">
             <padding><Insets top="18" right="14" bottom="14" left="14"/></padding>
 
-            <TextField fx:id="nameInput" promptText="نام" />
-            <TextField fx:id="phoneInput" promptText="شماره تلفن (+989...)" />
+            <TextField fx:id="nameInput"  promptText="نام"/>
+            <TextField fx:id="phoneInput" promptText="شماره تلفن (+989...)"/>
+
+            <!-- پیام وضعیت: خطا/موفقیت -->
+            <Label fx:id="statusLabel" text="" wrapText="true" styleClass="muted"/>
+
             <HBox spacing="10">
                 <Button text="انصراف" onAction="#onBack" styleClass="btn-ghost"/>
                 <Pane HBox.hgrow="ALWAYS"/>
-                <Button text="ذخیره" onAction="#onSave" styleClass="nc-action"/>
+                <Button fx:id="saveBtn" text="ذخیره" onAction="#onSave" styleClass="nc-action btn-primary"/>
             </HBox>
         </VBox>
     </center>
