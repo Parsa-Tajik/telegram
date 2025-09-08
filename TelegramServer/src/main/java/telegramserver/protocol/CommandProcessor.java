@@ -279,7 +279,6 @@ public class CommandProcessor {
         return SocketProtocol.buildResponse("CREATE_CHANNEL_OK", id, Map.of("channelId", channelId, "name", name));
     }
 
-
     private static String handleJoinChannel(JsonObject req, String id) {
         JsonObject payload = req.getAsJsonObject("payload");
         if (!payload.has("channelId") || !payload.has("username")) {
@@ -300,8 +299,6 @@ public class CommandProcessor {
 
         return SocketProtocol.buildResponse("JOIN_CHANNEL_OK", id, Map.of("channelId", channelId, "username", username));
     }
-
-
 
     private static String handleGetChannel(JsonObject req, String id) {
         if (!req.has("payload") || !req.getAsJsonObject("payload").has("channelId"))
